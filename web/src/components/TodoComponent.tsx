@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
 
 import type { Todo } from '@/types/database'
-import { apiClient } from '@/lib/api'
+import api from '@/lib/api'
 import { useAuth } from '@/hooks/useAuth'
 
 import { Button } from './ui/button'
@@ -13,20 +13,10 @@ export function TodoComponent() {
   const [newTask, setNewTask] = useState('')
 
   const getTodos = useCallback(async () => {
-    try {
-      setLoading(true)
-      const response = await apiClient.getTodos(user!.id)
-
-      if (!response.success) {
-        throw new Error(response.error)
-      }
-
-      setTodos((response.data as Todo[]) || [])
-    } catch (error) {
-      alert(error instanceof Error ? error.message : 'Error loading todos')
-    } finally {
-      setLoading(false)
-    }
+    setLoading(true)
+    const response = await api.get(`/todos?user_id=${user!.id}`)
+    setTodos(response.data.data || [])
+    setLoading(false)
   }, [user])
 
   useEffect(() => {
@@ -43,38 +33,20 @@ export function TodoComponent() {
       return
     }
 
-    try {
-      const response = await apiClient.createTodo(user!.id, newTask)
+    await api.post('/todos', { user_id: user!.id, task: newTask })
 
-      if (!response.success) throw new Error(response.error)
-
-      setNewTask('')
-      getTodos()
-    } catch (error) {
-      alert(error instanceof Error ? error.message : 'Error adding todo')
-    }
+    setNewTask('')
+    getTodos()
   }
 
   const toggleTodo = async (id: number, is_complete: boolean) => {
-    try {
-      const response = await apiClient.updateTodo(id, !is_complete)
-
-      if (!response.success) throw new Error(response.error)
-      getTodos()
-    } catch (error) {
-      alert(error instanceof Error ? error.message : 'Error updating todo')
-    }
+    await api.put(`/todos/${id}`, { is_complete: !is_complete })
+    getTodos()
   }
 
   const deleteTodo = async (id: number) => {
-    try {
-      const response = await apiClient.deleteTodo(id)
-
-      if (!response.success) throw new Error(response.error)
-      getTodos()
-    } catch (error) {
-      alert(error instanceof Error ? error.message : 'Error deleting todo')
-    }
+    await api.delete(`/todos/${id}`)
+    getTodos()
   }
 
   if (!user) return null

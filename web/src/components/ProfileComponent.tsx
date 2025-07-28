@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
 
 import type { Profile } from '@/types/database'
-import { apiClient } from '@/lib/api'
+import api from '@/lib/api'
 import { useAuth } from '@/hooks/useAuth'
 
 import { Button } from './ui/button'
@@ -13,54 +13,38 @@ export function ProfileComponent() {
   const [username, setUsername] = useState('')
   const [fullName, setFullName] = useState('')
 
-  const getProfile = useCallback(async () => {
-    try {
-      setLoading(true)
-      const response = await apiClient.getProfile(user!.id)
+  const fetchProfile = useCallback(async () => {
+    setLoading(true)
+    const response = await api.get(`/profiles/${user!.id}`)
 
-      if (!response.success) {
-        throw new Error(response.error)
-      }
-
-      if (response.data) {
-        const profileData = response.data as Profile
-        setProfile(profileData)
-        setUsername(profileData.username || '')
-        setFullName(profileData.full_name || '')
-      }
-    } catch (error) {
-      alert(error instanceof Error ? error.message : 'Error loading profile')
-    } finally {
-      setLoading(false)
+    if (response.data.data) {
+      const profileData = response.data.data as Profile
+      setProfile(profileData)
+      setUsername(profileData.username || '')
+      setFullName(profileData.full_name || '')
     }
+    setLoading(false)
   }, [user])
 
   useEffect(() => {
     if (user) {
-      getProfile()
+      fetchProfile()
     }
-  }, [user, getProfile])
+  }, [user, fetchProfile])
 
-  const updateProfile = async (e: React.FormEvent) => {
+  const handleUpdateProfile = async (e: React.FormEvent) => {
     e.preventDefault()
 
-    try {
-      setLoading(true)
+    setLoading(true)
 
-      const response = await apiClient.updateProfile(user!.id, {
-        username,
-        full_name: fullName,
-      })
+    await api.put(`/profiles/${user!.id}`, {
+      username,
+      full_name: fullName,
+    })
 
-      if (!response.success) throw new Error(response.error)
-
-      alert('Profile updated!')
-      getProfile()
-    } catch (error) {
-      alert(error instanceof Error ? error.message : 'Error updating profile')
-    } finally {
-      setLoading(false)
-    }
+    alert('Profile updated!')
+    fetchProfile()
+    setLoading(false)
   }
 
   if (!user) return null
@@ -72,7 +56,7 @@ export function ProfileComponent() {
       {loading ? (
         <p>Loading profile...</p>
       ) : (
-        <form onSubmit={updateProfile} className="space-y-4">
+        <form onSubmit={handleUpdateProfile} className="space-y-4">
           <div>
             <label className="mb-1 block text-sm font-medium">Username</label>
             <input

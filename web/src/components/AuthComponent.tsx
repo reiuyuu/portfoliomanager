@@ -12,17 +12,18 @@ export function AuthComponent() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
-    try {
-      if (isSignUp) {
-        const response = await signUp(email, password)
-        if (!response.success) throw new Error(response.error)
-        alert('Check your email for the confirmation link!')
-      } else {
-        const response = await signIn(email, password)
-        if (!response.success) throw new Error(response.error)
+    if (isSignUp) {
+      const response = await signUp(email, password)
+      if (!response.data.success) {
+        alert(response.data.error)
+        return
       }
-    } catch (error) {
-      alert(error instanceof Error ? error.message : 'An error occurred')
+      alert('Check your email for the confirmation link!')
+    } else {
+      const response = await signIn(email, password)
+      if (!response.data.success) {
+        alert(response.data.error)
+      }
     }
   }
 

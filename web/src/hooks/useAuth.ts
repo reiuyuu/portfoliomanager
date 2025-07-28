@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 
-import { apiClient } from '@/lib/api'
+import api, { setAuthToken } from '@/lib/api'
 
 interface User {
   id: string
@@ -30,7 +30,7 @@ export function useAuth() {
         const parsedSession = JSON.parse(savedSession)
         setSession(parsedSession)
         setUser(parsedSession.user)
-        apiClient.setToken(parsedSession.access_token)
+        setAuthToken(parsedSession.access_token)
       } catch {
         localStorage.removeItem('session')
       }
@@ -39,15 +39,15 @@ export function useAuth() {
   }, [])
 
   const signIn = async (email: string, password: string) => {
-    const response = await apiClient.signIn(email, password)
+    const response = await api.post('/auth/signin', { email, password })
 
-    if (response.success && response.data) {
+    if (response.data.data) {
       // Supabase returns { session, user } format
-      const authData = response.data as SupabaseAuthResponse
+      const authData = response.data.data as SupabaseAuthResponse
       if (authData.session) {
         setSession(authData.session)
         setUser(authData.session.user)
-        apiClient.setToken(authData.session.access_token)
+        setAuthToken(authData.session.access_token)
         localStorage.setItem('session', JSON.stringify(authData.session))
       }
     }
@@ -56,15 +56,15 @@ export function useAuth() {
   }
 
   const signUp = async (email: string, password: string) => {
-    return apiClient.signUp(email, password)
+    return api.post('/auth/signup', { email, password })
   }
 
   const signOut = async () => {
-    const response = await apiClient.signOut()
+    const response = await api.post('/auth/signout')
 
     setSession(null)
     setUser(null)
-    apiClient.setToken(null)
+    setAuthToken(null)
     localStorage.removeItem('session')
 
     return response

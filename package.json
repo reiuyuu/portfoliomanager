@@ -1,0 +1,25 @@
+{
+  "name": "portfoliomanager",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "dev": "concurrently \"npm run dev:web\" \"npm run dev:server\"",
+    "dev:web": "cd web && npm run dev",
+    "dev:server": "cd server && npm run dev",
+    "build": "npm run build:web && npm run build:server",
+    "build:web": "cd web && npm run build",
+    "build:server": "cd server && npm run build",
+    "install:all": "npm install && cd web && npm install && cd ../server && npm install",
+    "format": "prettier --write ."
+  },
+  "keywords": [],
+  "author": "reiuyuu <reiuyuu@gmail.com>",
+  "license": "ISC",
+  "description": "",
+  "devDependencies": {
+    "@ianvs/prettier-plugin-sort-imports": "^4.5.1",
+    "concurrently": "^9.2.0",
+    "prettier": "^3.6.2",
+    "prettier-plugin-tailwindcss": "^0.6.14"
+  }
+}

@@ -65,7 +65,26 @@ router.get('/', async (req, res) => {
  *                   type: boolean
  *                   example: true
  *                 data:
- *                   $ref: '#/components/schemas/PortfolioItem'
+ *                   type: object
+ *                   properties:
+ *                     portfolio:
+ *                       $ref: '#/components/schemas/PortfolioItem'
+ *                     users:
+ *                       type: object
+ *                       properties:
+ *                         total_value:
+ *                           type: number
+ *                         holdings_count:
+ *                           type: integer
+ *                     transaction_history:
+ *                       type: object
+ *                       properties:
+ *                         id:
+ *                           type: integer
+ *                         action:
+ *                           type: string
+ *                         amount:
+ *                           type: number
  *       400:
  *         description: Bad request - validation error
  *         content:
@@ -75,8 +94,19 @@ router.get('/', async (req, res) => {
  */
 // POST /api/portfolio/add
 router.post('/add', async (req, res) => {
-  // TODO: Implement portfolio item creation logic
-  res.status(201).json({ success: true, data: {} })
+  // TODO: 实际数据库操作
+  // 1. 插入 portfolio 表
+  // 2. 更新 users 表统计
+  // 3. 插入 transaction_history 表
+
+  res.status(201).json({
+    success: true,
+    data: {
+      portfolio: { id: 123, symbol: 'AAPL', quantity: 10 },
+      users: { total_value: 25000, holdings_count: 8 },
+      transaction_history: { id: 456, action: 'BUY', amount: 1500 },
+    },
+  })
 })
 
 /**

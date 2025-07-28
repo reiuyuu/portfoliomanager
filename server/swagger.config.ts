@@ -422,26 +422,26 @@ export const swaggerOptions: Options = {
       },
     },
     tags: [
-      {
-        name: 'Authentication',
-        description: 'User authentication endpoints',
-      },
-      {
-        name: 'Todos',
-        description: 'Todo management endpoints',
-      },
-      {
-        name: 'Profiles',
-        description: 'User profile management endpoints',
-      },
-      {
-        name: 'Colors',
-        description: 'Color theme management endpoints',
-      },
-      {
-        name: 'Health',
-        description: 'System health check endpoints',
-      },
+      // {
+      //   name: 'Authentication',
+      //   description: 'User authentication endpoints',
+      // },
+      // {
+      //   name: 'Todos',
+      //   description: 'Todo management endpoints',
+      // },
+      // {
+      //   name: 'Profiles',
+      //   description: 'User profile management endpoints',
+      // },
+      // {
+      //   name: 'Colors',
+      //   description: 'Color theme management endpoints',
+      // },
+      // {
+      //   name: 'Health',
+      //   description: 'System health check endpoints',
+      // },
       {
         name: 'Portfolio',
         description: 'Portfolio management endpoints',
@@ -449,6 +449,10 @@ export const swaggerOptions: Options = {
       {
         name: 'Price History',
         description: 'Stock price history and performance endpoints',
+      },
+      {
+        name: 'Profiles',
+        description: 'User profile management endpoints',
       },
       {
         name: 'Stocks',
@@ -460,5 +464,11 @@ export const swaggerOptions: Options = {
       },
     ],
   },
-  apis: ['./server/routes/*.ts'], // 扫描路由文件中的 JSDoc 注释
+  apis: [
+    './server/routes/portfolio.ts',
+    './server/routes/price-history.ts',
+    './server/routes/profiles.ts',
+    './server/routes/stocks.ts',
+    './server/routes/users.ts',
+  ], // 只扫描指定的路由文件中的 JSDoc 注释
 }

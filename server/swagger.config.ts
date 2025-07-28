@@ -149,6 +149,198 @@ export const swaggerOptions: Options = {
             },
           },
         },
+        PortfolioItem: {
+          type: 'object',
+          required: [
+            'itemId',
+            'stockTicker',
+            'stockName',
+            'volume',
+            'purchasePrice',
+            'purchaseDate',
+          ],
+          properties: {
+            itemId: {
+              type: 'integer',
+              description: 'Unique portfolio item identifier',
+              example: 1,
+            },
+            stockTicker: {
+              type: 'string',
+              description: 'Stock ticker symbol',
+              example: 'AAPL',
+            },
+            stockName: {
+              type: 'string',
+              description: 'Full company name',
+              example: 'Apple Inc.',
+            },
+            volume: {
+              type: 'integer',
+              minimum: 1,
+              description: 'Number of shares owned',
+              example: 100,
+            },
+            purchasePrice: {
+              type: 'number',
+              minimum: 0,
+              description: 'Price per share when purchased',
+              example: 150.25,
+            },
+            purchaseDate: {
+              type: 'string',
+              format: 'date',
+              description: 'Date when shares were purchased',
+              example: '2023-01-15',
+            },
+            currentPrice: {
+              type: 'number',
+              minimum: 0,
+              description: 'Current price per share',
+              example: 175.5,
+            },
+          },
+        },
+        PortfolioItemInput: {
+          type: 'object',
+          required: [
+            'stockTicker',
+            'stockName',
+            'volume',
+            'purchasePrice',
+            'purchaseDate',
+          ],
+          properties: {
+            stockTicker: {
+              type: 'string',
+              description: 'Stock ticker symbol',
+              example: 'AAPL',
+            },
+            stockName: {
+              type: 'string',
+              description: 'Full company name',
+              example: 'Apple Inc.',
+            },
+            volume: {
+              type: 'integer',
+              minimum: 1,
+              description: 'Number of shares to purchase',
+              example: 100,
+            },
+            purchasePrice: {
+              type: 'number',
+              minimum: 0,
+              description: 'Price per share when purchased',
+              example: 150.25,
+            },
+            purchaseDate: {
+              type: 'string',
+              format: 'date',
+              description: 'Date when shares were purchased',
+              example: '2023-01-15',
+            },
+          },
+        },
+        StockPerformanceItem: {
+          type: 'object',
+          required: ['id', 'itemId', 'date', 'price'],
+          properties: {
+            id: {
+              type: 'integer',
+              description: 'Unique performance record identifier',
+              example: 1,
+            },
+            itemId: {
+              type: 'integer',
+              description: 'Portfolio item identifier',
+              example: 1,
+            },
+            date: {
+              type: 'string',
+              format: 'date',
+              description: 'Date of the price record',
+              example: '2023-01-15',
+            },
+            price: {
+              type: 'number',
+              minimum: 0,
+              description: 'Stock price on this date',
+              example: 175.5,
+            },
+          },
+        },
+        StockItem: {
+          type: 'object',
+          required: ['id', 'stockTicker', 'stockName', 'currentPrice'],
+          properties: {
+            id: {
+              type: 'integer',
+              description: 'Unique stock identifier',
+              example: 1,
+            },
+            stockTicker: {
+              type: 'string',
+              description: 'Stock ticker symbol',
+              example: 'AAPL',
+            },
+            stockName: {
+              type: 'string',
+              description: 'Full company name',
+              example: 'Apple Inc.',
+            },
+            currentPrice: {
+              type: 'number',
+              minimum: 0,
+              description: 'Current stock price',
+              example: 175.5,
+            },
+            updateDate: {
+              type: 'string',
+              format: 'date',
+              description: 'Date when price was last updated',
+              example: '2023-01-15',
+            },
+          },
+        },
+        UserItem: {
+          type: 'object',
+          required: ['id', 'username'],
+          properties: {
+            id: {
+              type: 'integer',
+              description: 'Unique user identifier',
+              example: 1,
+            },
+            username: {
+              type: 'string',
+              description: 'User name',
+              example: 'john_doe',
+            },
+            holdings: {
+              type: 'number',
+              minimum: 0,
+              description: 'Total value of holdings',
+              example: 25000.5,
+            },
+            balance: {
+              type: 'number',
+              minimum: 0,
+              description: 'Available cash balance',
+              example: 5000.0,
+            },
+            netIncome: {
+              type: 'number',
+              description: 'Net income/loss from investments',
+              example: 2500.25,
+            },
+            updateDate: {
+              type: 'string',
+              format: 'date',
+              description: 'Date when user data was last updated',
+              example: '2023-01-15',
+            },
+          },
+        },
         ApiResponse: {
           type: 'object',
           required: ['success'],
@@ -249,6 +441,22 @@ export const swaggerOptions: Options = {
       {
         name: 'Health',
         description: 'System health check endpoints',
+      },
+      {
+        name: 'Portfolio',
+        description: 'Portfolio management endpoints',
+      },
+      {
+        name: 'Price History',
+        description: 'Stock price history and performance endpoints',
+      },
+      {
+        name: 'Stocks',
+        description: 'Stock information and search endpoints',
+      },
+      {
+        name: 'Users',
+        description: 'User management endpoints',
       },
     ],
   },

@@ -6,8 +6,12 @@ import swaggerUi from 'swagger-ui-express'
 import authRoutes from './routes/auth'
 import colorRoutes from './routes/colors'
 import healthRoutes from './routes/health'
+import portfolioRoutes from './routes/portfolio'
+import priceHistoryRoutes from './routes/price-history'
 import profileRoutes from './routes/profiles'
+import stockRoutes from './routes/stocks'
 import todoRoutes from './routes/todos'
+import userRoutes from './routes/users'
 import { swaggerOptions } from './swagger.config'
 
 const app = express()
@@ -38,8 +42,12 @@ app.get('/api-docs.json', (req, res) => {
 app.use('/api/auth', authRoutes)
 app.use('/api/colors', colorRoutes)
 app.use('/api/health', healthRoutes)
+app.use('/api/portfolio', portfolioRoutes)
+app.use('/api/price-history', priceHistoryRoutes)
 app.use('/api/profiles', profileRoutes)
+app.use('/api/stocks', stockRoutes)
 app.use('/api/todos', todoRoutes)
+app.use('/api/users', userRoutes)
 
 app.listen(PORT, () => {
   console.log(`Server running on http://localhost:${PORT}`)

@@ -14,12 +14,12 @@ export function AuthComponent() {
 
     try {
       if (isSignUp) {
-        const { error } = await signUp(email, password)
-        if (error) throw error
+        const response = await signUp(email, password)
+        if (!response.success) throw new Error(response.error)
         alert('Check your email for the confirmation link!')
       } else {
-        const { error } = await signIn(email, password)
-        if (error) throw error
+        const response = await signIn(email, password)
+        if (!response.success) throw new Error(response.error)
       }
     } catch (error) {
       alert(error instanceof Error ? error.message : 'An error occurred')

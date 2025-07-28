@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
 
 import { useAuth } from '../hooks/useAuth'
-import { db } from '../lib/db'
+import { apiClient } from '../lib/api'
 import type { Profile } from '../types/database'
 import { Button } from './ui/button'
 
@@ -15,20 +15,17 @@ export function ProfileComponent() {
   const getProfile = useCallback(async () => {
     try {
       setLoading(true)
-      const { data, error } = await db
-        .from('profiles')
-        .select('*')
-        .eq('id', user!.id)
-        .single()
+      const response = await apiClient.getProfile(user!.id)
 
-      if (error && error.code !== 'PGRST116') {
-        throw error
+      if (!response.success) {
+        throw new Error(response.error)
       }
 
-      if (data) {
-        setProfile(data)
-        setUsername(data.username || '')
-        setFullName(data.full_name || '')
+      if (response.data) {
+        const profileData = response.data as Profile
+        setProfile(profileData)
+        setUsername(profileData.username || '')
+        setFullName(profileData.full_name || '')
       }
     } catch (error) {
       alert(error instanceof Error ? error.message : 'Error loading profile')
@@ -48,16 +45,13 @@ export function ProfileComponent() {
 
     try {
       setLoading(true)
-      const updates = {
-        id: user!.id,
+
+      const response = await apiClient.updateProfile(user!.id, {
         username,
         full_name: fullName,
-        updated_at: new Date().toISOString(),
-      }
+      })
 
-      const { error } = await db.from('profiles').upsert(updates)
-
-      if (error) throw error
+      if (!response.success) throw new Error(response.error)
 
       alert('Profile updated!')
       getProfile()

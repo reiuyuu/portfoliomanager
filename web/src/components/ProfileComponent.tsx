@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 
-import type { Profile } from '@shared/types'
+import type { Profile } from '@/types/database'
 import { apiClient } from '@/lib/api'
 import { useAuth } from '@/hooks/useAuth'
 

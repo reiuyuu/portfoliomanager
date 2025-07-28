@@ -1,5 +1,3 @@
-// 数据库表类型定义
-
 export interface Profile {
   id: string
   updated_at: string | null

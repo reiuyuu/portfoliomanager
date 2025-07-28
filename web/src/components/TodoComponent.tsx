@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 
-import type { Todo } from '@shared/types'
+import type { Todo } from '@/types/database'
 import { apiClient } from '@/lib/api'
 import { useAuth } from '@/hooks/useAuth'
 

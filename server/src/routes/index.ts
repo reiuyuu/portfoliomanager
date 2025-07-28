@@ -1,13 +1,13 @@
 import { Router } from 'express'
 
-import authRouter from './auth'
-import healthRouter from './health'
-import portfolioRouter from './portfolio'
-import priceHistoryRouter from './price-history'
-import profilesRouter from './profiles'
-import stocksRouter from './stocks'
-import todosRouter from './todos'
-import usersRouter from './users'
+import authRouter from './auth.js'
+import healthRouter from './health.js'
+import portfolioRouter from './portfolio.js'
+import priceHistoryRouter from './price-history.js'
+import profilesRouter from './profiles.js'
+import stocksRouter from './stocks.js'
+import todosRouter from './todos.js'
+import usersRouter from './users.js'
 
 export const routes = Router()
 

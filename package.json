@@ -10,7 +10,8 @@
     "build:web": "cd web && npm run build",
     "build:server": "cd server && npm run build",
     "install:all": "npm install && cd web && npm install && cd ../server && npm install",
-    "format": "prettier --write ."
+    "format": "prettier --write .",
+    "clean": "rm -rf node_modules && rm -rf web/node_modules && rm -rf server/node_modules && rm -rf web/dist && rm -rf server/dist"
   },
   "keywords": [],
   "author": "reiuyuu <reiuyuu@gmail.com>",

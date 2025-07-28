@@ -20,7 +20,6 @@ npm run dev:server # Backend only
 
 - `web/` - React frontend with TypeScript and Vite
 - `server/` - Express backend with TypeScript
-- `shared/` - Shared code used by both web and server
 - `package.json` - Root workspace configuration
 
 ## Scripts
@@ -39,5 +38,5 @@ npm run dev:server # Backend only
 
 Each package has its own README with specific setup instructions:
 
-- [Web Frontend](./web/README.md)
-- [API Server](./server/README.md)
+- [./web/README.md](./web/README.md)
+- [./server/README.md](./server/README.md)

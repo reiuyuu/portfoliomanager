@@ -4,6 +4,37 @@ import { db } from '../db'
 
 const router = Router()
 
+/**
+ * @swagger
+ * /api/colors:
+ *   get:
+ *     summary: Get all colors
+ *     tags: [Colors]
+ *     responses:
+ *       200:
+ *         description: List of all colors retrieved successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 data:
+ *                   type: array
+ *                   items:
+ *                     $ref: '#/components/schemas/Color'
+ *                 count:
+ *                   type: number
+ *                   example: 10
+ *       400:
+ *         description: Bad request
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/responses/BadRequest'
+ */
 // GET /api/colors
 router.get('/', async (req, res) => {
   const { data, error } = await db
@@ -16,6 +47,40 @@ router.get('/', async (req, res) => {
   res.json({ success: true, data, count: data?.length || 0 })
 })
 
+/**
+ * @swagger
+ * /api/colors/{id}:
+ *   get:
+ *     summary: Get a specific color by ID
+ *     tags: [Colors]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *         description: The color ID
+ *     responses:
+ *       200:
+ *         description: Color retrieved successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 data:
+ *                   $ref: '#/components/schemas/Color'
+ *       404:
+ *         description: Color not found
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/responses/NotFound'
+ */
 // GET /api/colors/:id
 router.get('/:id', async (req, res) => {
   const { data, error } = await db

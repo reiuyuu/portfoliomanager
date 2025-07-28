@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
 
 import { useAuth } from '../hooks/useAuth'
-import { db } from '../lib/db'
+import { apiClient } from '../lib/api'
 import type { Todo } from '../types/database'
 import { Button } from './ui/button'
 
@@ -14,14 +14,13 @@ export function TodoComponent() {
   const getTodos = useCallback(async () => {
     try {
       setLoading(true)
-      const { data, error } = await db
-        .from('todos')
-        .select('*')
-        .eq('user_id', user!.id)
-        .order('inserted_at', { ascending: false })
+      const response = await apiClient.getTodos(user!.id)
 
-      if (error) throw error
-      setTodos(data || [])
+      if (!response.success) {
+        throw new Error(response.error)
+      }
+
+      setTodos((response.data as Todo[]) || [])
     } catch (error) {
       alert(error instanceof Error ? error.message : 'Error loading todos')
     } finally {
@@ -44,15 +43,9 @@ export function TodoComponent() {
     }
 
     try {
-      const { error } = await db.from('todos').insert([
-        {
-          user_id: user!.id,
-          task: newTask,
-          is_complete: false,
-        },
-      ])
+      const response = await apiClient.createTodo(user!.id, newTask)
 
-      if (error) throw error
+      if (!response.success) throw new Error(response.error)
 
       setNewTask('')
       getTodos()
@@ -63,12 +56,9 @@ export function TodoComponent() {
 
   const toggleTodo = async (id: number, is_complete: boolean) => {
     try {
-      const { error } = await db
-        .from('todos')
-        .update({ is_complete: !is_complete })
-        .eq('id', id)
+      const response = await apiClient.updateTodo(id, !is_complete)
 
-      if (error) throw error
+      if (!response.success) throw new Error(response.error)
       getTodos()
     } catch (error) {
       alert(error instanceof Error ? error.message : 'Error updating todo')
@@ -77,9 +67,9 @@ export function TodoComponent() {
 
   const deleteTodo = async (id: number) => {
     try {
-      const { error } = await db.from('todos').delete().eq('id', id)
+      const response = await apiClient.deleteTodo(id)
 
-      if (error) throw error
+      if (!response.success) throw new Error(response.error)
       getTodos()
     } catch (error) {
       alert(error instanceof Error ? error.message : 'Error deleting todo')

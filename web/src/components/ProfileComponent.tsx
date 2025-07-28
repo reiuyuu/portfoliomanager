@@ -1,8 +1,9 @@
 import { useCallback, useEffect, useState } from 'react'
 
-import { useAuth } from '../hooks/useAuth'
-import { apiClient } from '../lib/api'
-import type { Profile } from '../types/database'
+import type { Profile } from '@shared/types'
+import { apiClient } from '@/lib/api'
+import { useAuth } from '@/hooks/useAuth'
+
 import { Button } from './ui/button'
 
 export function ProfileComponent() {

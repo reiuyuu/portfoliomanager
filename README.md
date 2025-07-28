@@ -20,6 +20,7 @@ npm run dev:server # Backend only
 
 - `web/` - React frontend with TypeScript and Vite
 - `server/` - Express backend with TypeScript
+- `shared/` - Shared code used by both web and server
 - `package.json` - Root workspace configuration
 
 ## Scripts

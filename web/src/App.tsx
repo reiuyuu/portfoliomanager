@@ -54,16 +54,16 @@ function App() {
     <div className="min-h-screen bg-gray-50">
       <div className="container mx-auto px-4 py-8">
         <div className="mb-6 text-center">
-          <h1 className="text-2xl font-bold">Stock Portfolio Manager</h1>
+          <h1 className="text-2xl font-bold">Portfolio Manager</h1>
         </div>
 
         <div className="mx-auto max-w-7xl space-y-10">
           <ProfileSummary profile={profile} loading={loading} />
-          <div className="grid grid-cols-1 gap-6 lg:grid-cols-5">
-            <div className="lg:col-span-2">
+          <div className="grid grid-cols-1 gap-6 lg:grid-cols-9">
+            <div className="lg:col-span-4">
               <PortfolioHoldings portfolio={portfolio} loading={loading} />
             </div>
-            <div className="lg:col-span-3">
+            <div className="lg:col-span-5">
               <StockChart onStockPurchased={refreshData} />
             </div>
           </div>

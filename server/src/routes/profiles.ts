@@ -4,7 +4,6 @@ import { db } from '../config/db.js'
 
 const router = Router()
 
-// GET /api/profiles - Get the first profile (for single user setup)
 router.get('/', async (_req, res) => {
   const { data, error } = await db.from('profiles').select('*').single()
 

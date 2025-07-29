@@ -4,8 +4,7 @@ import { db } from '../config/db.js'
 
 const router = Router()
 
-// GET /api/portfolio
-router.get('/', async (req, res) => {
+router.get('/', async (_req, res) => {
   try {
     // 第一步：获取 portfolio_holdings 及其 stocks 信息
     const { data: holdings, error } = await db.from('portfolio_holdings')

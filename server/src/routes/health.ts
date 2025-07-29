@@ -2,7 +2,7 @@ import { Router } from 'express'
 
 const router = Router()
 
-router.get('/', (req, res) => {
+router.get('/', (_req, res) => {
   res.json({
     message: 'Portfolio Manager API Server is running!',
     timestamp: new Date().toISOString(),

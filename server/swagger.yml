@@ -113,12 +113,83 @@ components:
               type: number
               format: float
               description: Latest stock price
-            date:
+              date:
               type: string
               format: date
               description: Date of the latest price
 
-  securitySchemes:
+    Profile:
+      type: object
+      properties:
+        id:
+          type: integer
+          description: Profile unique identifier
+        balance:
+          type: number
+          format: float
+          description: Available cash balance
+        holdings:
+          type: number
+          format: float
+          description: Total value of stock holdings
+        init_invest:
+          type: number
+          format: float
+          description: Initial investment amount
+        net_profit:
+          type: number
+          format: float
+          description: Net profit/loss
+        created_at:
+          type: string
+          format: date-time
+          description: Creation timestamp
+
+    PortfolioHolding:
+      type: object
+      properties:
+        id:
+          type: integer
+          description: Portfolio holding unique identifier
+        symbol:
+          type: string
+          description: Stock symbol
+        name:
+          type: string
+          nullable: true
+          description: Company name
+        volume:
+          type: integer
+          description: Number of shares held
+        averagePrice:
+          type: number
+          format: float
+          description: Average purchase price per share
+        currentPrice:
+          type: number
+          format: float
+          nullable: true
+          description: Current market price per share
+
+    BuyStockRequest:
+      type: object
+      required:
+        - stockId
+        - volume
+        - currentPrice
+      properties:
+        stockId:
+          type: integer
+          description: ID of the stock to purchase
+        volume:
+          type: integer
+          minimum: 1
+          description: Number of shares to buy
+        currentPrice:
+          type: number
+          format: float
+          minimum: 0
+          description: Current price per share  securitySchemes:
     BearerAuth:
       type: http
       scheme: bearer
@@ -228,6 +299,194 @@ paths:
                 success:
                   value:
                     success: true
+
+  /portfolio:
+    get:
+      tags:
+        - Portfolio
+      summary: Get portfolio holdings
+      description: Retrieve all portfolio holdings with current market data
+      responses:
+        '200':
+          description: Portfolio holdings retrieved successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/PortfolioHolding'
+                      count:
+                        type: integer
+                        description: Number of holdings
+              examples:
+                success:
+                  value:
+                    success: true
+                    data:
+                      - id: 1
+                        symbol: 'AAPL'
+                        name: 'Apple Inc.'
+                        volume: 10
+                        averagePrice: 145.50
+                        currentPrice: 150.25
+                      - id: 2
+                        symbol: 'GOOGL'
+                        name: 'Alphabet Inc.'
+                        volume: 5
+                        averagePrice: 2700.00
+                        currentPrice: 2750.80
+                    count: 2
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+              examples:
+                error:
+                  value:
+                    success: false
+                    error: 'Database query failed'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+              examples:
+                error:
+                  value:
+                    success: false
+                    error: 'Internal server error'
+
+  /portfolio/buy:
+    post:
+      tags:
+        - Portfolio
+      summary: Buy stocks
+      description: Purchase stocks and update portfolio holdings and profile balance
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BuyStockRequest'
+            examples:
+              example:
+                value:
+                  stockId: 1
+                  volume: 10
+                  currentPrice: 150.25
+      responses:
+        '200':
+          description: Stock purchase successful
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          portfolio:
+                            type: object
+                            description: Updated portfolio holding
+                          profile:
+                            $ref: '#/components/schemas/Profile'
+              examples:
+                success:
+                  value:
+                    success: true
+                    data:
+                      portfolio:
+                        id: 1
+                        stock_id: 1
+                        volume: 20
+                        avg_price: 147.50
+                      profile:
+                        id: 1
+                        balance: 95000.00
+                        holdings: 25000.00
+                        init_invest: 100000.00
+                        net_profit: 20000.00
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+              examples:
+                insufficient_balance:
+                  value:
+                    success: false
+                    error: 'Not enough balance'
+                invalid_request:
+                  value:
+                    success: false
+                    error: 'Request must include numeric stockId, volume, and currentPrice'
+                stock_not_found:
+                  value:
+                    success: false
+                    message: 'Stock not found'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+              examples:
+                error:
+                  value:
+                    success: false
+                    message: 'Unexpected server error'
+
+  /profiles:
+    get:
+      tags:
+        - Profiles
+      summary: Get user profile
+      description: Retrieve the user's financial profile including balance, holdings, and profit/loss
+      responses:
+        '200':
+          description: Profile retrieved successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/Profile'
+              examples:
+                success:
+                  value:
+                    success: true
+                    data:
+                      id: 1
+                      balance: 95000.00
+                      holdings: 25000.00
+                      init_invest: 100000.00
+                      net_profit: 20000.00
+                      created_at: '2024-01-01T00:00:00.000Z'
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+              examples:
+                error:
+                  value:
+                    success: false
+                    error: 'Database query failed'
 
   /stocks:
     get:
@@ -344,5 +603,9 @@ paths:
 tags:
   - name: Authentication
     description: User authentication endpoints
+  - name: Portfolio
+    description: Portfolio management and trading endpoints
+  - name: Profiles
+    description: User financial profile endpoints
   - name: Stocks
     description: Stock data and price management endpoints

@@ -15,6 +15,13 @@ const PORT = process.env.PORT || 3000
 app.use(cors())
 app.use(express.json())
 
+// 根路径
+app.get('/', (req, res) => {
+  res.send(
+    'Portfolio Manager API is running. Visit /api-docs for API documentation.',
+  )
+})
+
 // Swagger API Documentation
 app.use(
   '/api-docs',

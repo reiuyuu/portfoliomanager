@@ -1,5 +1,7 @@
 import { Router } from 'express'
 
+import { supabase } from '../utils/supabaseClient'
+
 const router = Router()
 
 /**
@@ -203,9 +205,49 @@ router.put('/:itemId', async (req, res) => {
  *               $ref: '#/components/responses/BadRequest'
  */
 // DELETE /api/portfolio/:itemId
+
 router.delete('/:itemId', async (req, res) => {
-  // TODO: Implement portfolio item deletion logic
-  res.json({ success: true, message: 'Portfolio item deleted successfully' })
+  const { itemId } = req.params
+  const parsedId = parseInt(itemId, 10)
+
+  if (isNaN(parsedId)) {
+    return res.status(400).json({ success: false, message: 'Invalid itemId' })
+  }
+
+  try {
+    // 查询portfolio_holdings表的id是否存在
+    const { data: existingItem, error: selectError } = await supabase
+      .from('portfolio_holdings')
+      .select('id')
+      .eq('id', parsedId)
+      .single()
+
+    if (selectError || !existingItem) {
+      return res
+        .status(404)
+        .json({ success: false, message: 'Portfolio item not found' })
+    }
+
+    // 删除
+    const { error: deleteError } = await supabase
+      .from('portfolio_holdings')
+      .delete()
+      .eq('id', parsedId)
+
+    if (deleteError) {
+      return res
+        .status(400)
+        .json({ success: false, message: deleteError.message })
+    }
+
+    return res
+      .status(200)
+      .json({ success: true, message: 'Portfolio item deleted successfully' })
+  } catch (err: any) {
+    return res
+      .status(400)
+      .json({ success: false, message: err.message || 'Unknown' })
+  }
 })
 
 export default router

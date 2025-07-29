@@ -1,6 +1,6 @@
 import { Router } from 'express'
 
-import { supabase } from '../utils/supabaseClient'
+import { db } from '../config/db.js'
 
 const router = Router()
 
@@ -36,7 +36,6 @@ const router = Router()
  *             schema:
  *               $ref: '#/components/responses/BadRequest'
  */
-// GET /api/portfolio
 router.get('/', async (req, res) => {
   // TODO: Implement portfolio retrieval logic
   res.json({ success: true, data: [], count: 0 })
@@ -94,7 +93,6 @@ router.get('/', async (req, res) => {
  *             schema:
  *               $ref: '#/components/responses/BadRequest'
  */
-// POST /api/portfolio/add
 router.post('/add', async (req, res) => {
   // TODO: 实际数据库操作
   // 1. 插入 portfolio 表
@@ -157,7 +155,6 @@ router.post('/add', async (req, res) => {
  *             schema:
  *               $ref: '#/components/responses/BadRequest'
  */
-// PUT /api/portfolio/:itemId
 router.put('/:itemId', async (req, res) => {
   // TODO: Implement portfolio item update logic
   res.json({ success: true, data: {} })
@@ -204,8 +201,6 @@ router.put('/:itemId', async (req, res) => {
  *             schema:
  *               $ref: '#/components/responses/BadRequest'
  */
-
-// DELETE /api/portfolio/:itemId
 router.delete('/:itemId', async (req, res) => {
   const { itemId } = req.params
   const parsedId = parseInt(itemId, 10)
@@ -215,8 +210,7 @@ router.delete('/:itemId', async (req, res) => {
   }
 
   try {
-    // 查询 portfolio_holdings 中的记录（包括 stock_id 和 valumn）
-    const { data: existingItem, error: selectError } = await supabase
+    const { data: existingItem, error: selectError } = await db
       .from('portfolio_holdings')
       .select('id, stock_id, volume')
       .eq('id', parsedId)
@@ -228,8 +222,7 @@ router.delete('/:itemId', async (req, res) => {
         .json({ success: false, message: 'Portfolio item not found' })
     }
 
-    // 获取当前价格
-    const { data: priceData, error: priceError } = await supabase
+    const { data: priceData, error: priceError } = await db
       .from('stock_prices')
       .select('price')
       .eq('stock_id', existingItem.stock_id)
@@ -245,10 +238,9 @@ router.delete('/:itemId', async (req, res) => {
 
     const currentValue = existingItem.volume * priceData.price
 
-    // 查询当前 profile（只有一个用户）
-    const { data: profileData, error: profileError } = await supabase
+    const { data: profileData, error: profileError } = await db
       .from('profiles')
-      .select('id, balance, holdings,init_invest')
+      .select('id, balance, holdings, init_invest')
       .limit(1)
       .single()
 
@@ -265,12 +257,12 @@ router.delete('/:itemId', async (req, res) => {
         message: 'Initial investment (init_invest) is missing or invalid',
       })
     }
+
     const updatedBalance = (profileData.balance || 0) + currentValue
     const updatedHoldings = (profileData.holdings || 0) - currentValue
     const updatedNetProfit = updatedBalance + updatedHoldings - initInvest
 
-    // 更新 profile 的 balance 和 holdings
-    const { error: updateProfileError } = await supabase
+    const { error: updateProfileError } = await db
       .from('profiles')
       .update({
         balance: updatedBalance,
@@ -285,8 +277,7 @@ router.delete('/:itemId', async (req, res) => {
         .json({ success: false, message: updateProfileError.message })
     }
 
-    // 删除 portfolio_holdings 中该项
-    const { error: deleteError } = await supabase
+    const { error: deleteError } = await db
       .from('portfolio_holdings')
       .delete()
       .eq('id', parsedId)

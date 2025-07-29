@@ -1,4 +1,3 @@
-import { error } from 'console'
 import { Router } from 'express'
 
 import { db } from '../config/db'

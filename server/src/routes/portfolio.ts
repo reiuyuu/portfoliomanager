@@ -1,5 +1,7 @@
 import { Router } from 'express'
 
+import { db } from '../config/db'
+
 const router = Router()
 
 /**
@@ -111,7 +113,7 @@ router.post('/add', async (req, res) => {
 
 /**
  * @swagger
- * /api/portfolio/{itemId}:
+ * /api/portfolio/{stockId}:
  *   put:
  *     summary: Modify item of the portfolio
  *     tags: [Portfolio]
@@ -141,7 +143,12 @@ router.post('/add', async (req, res) => {
  *                   type: boolean
  *                   example: true
  *                 data:
- *                   $ref: '#/components/schemas/PortfolioItem'
+ *                   type: object
+ *                   properties:
+ *                     portfolio:
+ *                       $ref: '#/components/schemas/PortfolioItem'
+ *                     profile:
+ *                       $ref: '#/components/schemas/UserItem'
  *       404:
  *         description: Portfolio item not found
  *         content:
@@ -155,10 +162,102 @@ router.post('/add', async (req, res) => {
  *             schema:
  *               $ref: '#/components/responses/BadRequest'
  */
-// PUT /api/portfolio/:itemId
-router.put('/:itemId', async (req, res) => {
-  // TODO: Implement portfolio item update logic
-  res.json({ success: true, data: {} })
+// PUT /api/portfolio/:stockId
+router.put('/:stockId', async (req, res) => {
+  const stockId = parseInt(req.params.stockId, 10)
+
+  if (isNaN(stockId)) {
+    return res.status(400).json({
+      success: false,
+      error: 'Stock ID must be an integer',
+    })
+  }
+
+  const { additionalVolume, currentPrice } = req.body
+  if (
+    typeof additionalVolume !== 'number' ||
+    typeof currentPrice !== 'number'
+  ) {
+    return res.status(400).json({
+      success: false,
+      error: 'Request body must include numeric volume, and currentPrice',
+    })
+  }
+
+  // Get current profile
+  const { data: existingProfile, error: fetchProfileError } = await db
+    .from('profiles')
+    .select('*')
+    .single()
+
+  if (existingProfile.balance < additionalVolume * currentPrice) {
+    return res.status(400).json({
+      success: false,
+      error: 'Not enough cash',
+    })
+  }
+
+  // Get current volume and current average price
+  const { data: existingItem, error: fetchItemError } = await db
+    .from('portfolio_holdings')
+    .select('*')
+    .eq('stock_id', stockId)
+    .single()
+
+  if (!existingItem || existingItem.length === 0) {
+    return res.status(404).json({
+      success: false,
+      error: `No portfolio item with id ${stockId}`,
+    })
+  }
+
+  // Update volume and average price
+  const newVolume = existingItem.volume + additionalVolume
+  const newAveragePrice =
+    (existingItem.avg_price * existingItem.volume +
+      additionalVolume * currentPrice) /
+    newVolume
+
+  const { data: updatedPortfolio, error: updatePortfolioErr } = await db
+    .from('portfolio_holdings')
+    .update({
+      volume: newVolume,
+      avg_price: newAveragePrice,
+    })
+    .eq('stock_id', stockId)
+    .select('*')
+    .single()
+
+  if (updatePortfolioErr) {
+    return res.status(400).json({
+      success: false,
+      error: updatePortfolioErr.message,
+    })
+  }
+
+  // Update profile
+  const newHoldings = existingProfile.holdings + additionalVolume * currentPrice
+  const newBalance = existingProfile.balance - additionalVolume * currentPrice
+  const newNetProfit = newHoldings + newBalance - existingProfile.init_invest
+
+  const { data: updatedProfile, error: updateProfileErr } = await db
+    .from('profiles')
+    .update({
+      holdings: newHoldings,
+      balance: newBalance,
+      net_profit: newNetProfit,
+    })
+    .eq('id', existingProfile.id)
+    .select('*')
+    .single()
+
+  res.json({
+    success: true,
+    data: {
+      portfolio: updatedPortfolio,
+      profile: updatedProfile,
+    },
+  })
 })
 
 /**

@@ -1,0 +1,611 @@
+openapi: 3.0.0
+info:
+  title: Portfolio Manager API
+  description: API for managing investment portfolios
+  version: 1.0.0
+  contact:
+    name: Portfolio Manager Team
+    email: contact@portfoliomanager.com
+
+servers:
+  - url: http://localhost:3000/api
+    description: Development server
+  - url: https://portfoliomanager-api.com/api
+    description: Production server
+
+components:
+  schemas:
+    ApiResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          description: Indicates if the request was successful
+        data:
+          type: object
+          description: Response data when successful
+        error:
+          type: string
+          description: Error message when unsuccessful
+
+    User:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: User unique identifier
+        email:
+          type: string
+          format: email
+          description: User email address
+
+    Session:
+      type: object
+      properties:
+        user:
+          $ref: '#/components/schemas/User'
+        access_token:
+          type: string
+          description: JWT access token
+
+    AuthRequest:
+      type: object
+      required:
+        - email
+        - password
+      properties:
+        email:
+          type: string
+          format: email
+          example: user@example.com
+        password:
+          type: string
+          format: password
+          example: password123
+
+    Stock:
+      type: object
+      properties:
+        id:
+          type: integer
+          description: Stock unique identifier
+        symbol:
+          type: string
+          description: Stock symbol (e.g., AAPL)
+        name:
+          type: string
+          nullable: true
+          description: Company name
+        created_at:
+          type: string
+          format: date-time
+          description: Creation timestamp
+
+    StockPrice:
+      type: object
+      properties:
+        id:
+          type: integer
+          description: Price record unique identifier
+        stock_id:
+          type: integer
+          description: Associated stock ID
+        date:
+          type: string
+          format: date
+          description: Price date (YYYY-MM-DD)
+        price:
+          type: number
+          format: float
+          description: Stock price
+        created_at:
+          type: string
+          format: date-time
+          description: Creation timestamp
+
+    StockWithLatestPrice:
+      allOf:
+        - $ref: '#/components/schemas/Stock'
+        - type: object
+          properties:
+            price:
+              type: number
+              format: float
+              description: Latest stock price
+              date:
+              type: string
+              format: date
+              description: Date of the latest price
+
+    Profile:
+      type: object
+      properties:
+        id:
+          type: integer
+          description: Profile unique identifier
+        balance:
+          type: number
+          format: float
+          description: Available cash balance
+        holdings:
+          type: number
+          format: float
+          description: Total value of stock holdings
+        init_invest:
+          type: number
+          format: float
+          description: Initial investment amount
+        net_profit:
+          type: number
+          format: float
+          description: Net profit/loss
+        created_at:
+          type: string
+          format: date-time
+          description: Creation timestamp
+
+    PortfolioHolding:
+      type: object
+      properties:
+        id:
+          type: integer
+          description: Portfolio holding unique identifier
+        symbol:
+          type: string
+          description: Stock symbol
+        name:
+          type: string
+          nullable: true
+          description: Company name
+        volume:
+          type: integer
+          description: Number of shares held
+        averagePrice:
+          type: number
+          format: float
+          description: Average purchase price per share
+        currentPrice:
+          type: number
+          format: float
+          nullable: true
+          description: Current market price per share
+
+    BuyStockRequest:
+      type: object
+      required:
+        - stockId
+        - volume
+        - currentPrice
+      properties:
+        stockId:
+          type: integer
+          description: ID of the stock to purchase
+        volume:
+          type: integer
+          minimum: 1
+          description: Number of shares to buy
+        currentPrice:
+          type: number
+          format: float
+          minimum: 0
+          description: Current price per share  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+paths:
+  /auth/signup:
+    post:
+      tags:
+        - Authentication
+      summary: User registration
+      description: Register a new user account
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AuthRequest'
+      responses:
+        '200':
+          description: Registration successful
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          session:
+                            $ref: '#/components/schemas/Session'
+              examples:
+                success:
+                  value:
+                    success: true
+                    data:
+                      session:
+                        user:
+                          id: '550e8400-e29b-41d4-a716-446655440000'
+                          email: 'user@example.com'
+                        access_token: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...'
+                error:
+                  value:
+                    success: false
+                    error: 'User already registered'
+
+  /auth/signin:
+    post:
+      tags:
+        - Authentication
+      summary: User login
+      description: Authenticate user and get access token
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AuthRequest'
+      responses:
+        '200':
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          session:
+                            $ref: '#/components/schemas/Session'
+              examples:
+                success:
+                  value:
+                    success: true
+                    data:
+                      session:
+                        user:
+                          id: '550e8400-e29b-41d4-a716-446655440000'
+                          email: 'user@example.com'
+                        access_token: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...'
+                error:
+                  value:
+                    success: false
+                    error: 'Invalid login credentials'
+
+  /auth/signout:
+    post:
+      tags:
+        - Authentication
+      summary: User logout
+      description: Sign out the current user session
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Logout successful
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+              examples:
+                success:
+                  value:
+                    success: true
+
+  /portfolio:
+    get:
+      tags:
+        - Portfolio
+      summary: Get portfolio holdings
+      description: Retrieve all portfolio holdings with current market data
+      responses:
+        '200':
+          description: Portfolio holdings retrieved successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/PortfolioHolding'
+                      count:
+                        type: integer
+                        description: Number of holdings
+              examples:
+                success:
+                  value:
+                    success: true
+                    data:
+                      - id: 1
+                        symbol: 'AAPL'
+                        name: 'Apple Inc.'
+                        volume: 10
+                        averagePrice: 145.50
+                        currentPrice: 150.25
+                      - id: 2
+                        symbol: 'GOOGL'
+                        name: 'Alphabet Inc.'
+                        volume: 5
+                        averagePrice: 2700.00
+                        currentPrice: 2750.80
+                    count: 2
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+              examples:
+                error:
+                  value:
+                    success: false
+                    error: 'Database query failed'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+              examples:
+                error:
+                  value:
+                    success: false
+                    error: 'Internal server error'
+
+  /portfolio/buy:
+    post:
+      tags:
+        - Portfolio
+      summary: Buy stocks
+      description: Purchase stocks and update portfolio holdings and profile balance
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BuyStockRequest'
+            examples:
+              example:
+                value:
+                  stockId: 1
+                  volume: 10
+                  currentPrice: 150.25
+      responses:
+        '200':
+          description: Stock purchase successful
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          portfolio:
+                            type: object
+                            description: Updated portfolio holding
+                          profile:
+                            $ref: '#/components/schemas/Profile'
+              examples:
+                success:
+                  value:
+                    success: true
+                    data:
+                      portfolio:
+                        id: 1
+                        stock_id: 1
+                        volume: 20
+                        avg_price: 147.50
+                      profile:
+                        id: 1
+                        balance: 95000.00
+                        holdings: 25000.00
+                        init_invest: 100000.00
+                        net_profit: 20000.00
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+              examples:
+                insufficient_balance:
+                  value:
+                    success: false
+                    error: 'Not enough balance'
+                invalid_request:
+                  value:
+                    success: false
+                    error: 'Request must include numeric stockId, volume, and currentPrice'
+                stock_not_found:
+                  value:
+                    success: false
+                    message: 'Stock not found'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+              examples:
+                error:
+                  value:
+                    success: false
+                    message: 'Unexpected server error'
+
+  /profiles:
+    get:
+      tags:
+        - Profiles
+      summary: Get user profile
+      description: Retrieve the user's financial profile including balance, holdings, and profit/loss
+      responses:
+        '200':
+          description: Profile retrieved successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/Profile'
+              examples:
+                success:
+                  value:
+                    success: true
+                    data:
+                      id: 1
+                      balance: 95000.00
+                      holdings: 25000.00
+                      init_invest: 100000.00
+                      net_profit: 20000.00
+                      created_at: '2024-01-01T00:00:00.000Z'
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+              examples:
+                error:
+                  value:
+                    success: false
+                    error: 'Database query failed'
+
+  /stocks:
+    get:
+      tags:
+        - Stocks
+      summary: Get all stocks with latest prices
+      description: Retrieve all stocks with their most recent price data
+      responses:
+        '200':
+          description: Stocks retrieved successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/StockWithLatestPrice'
+              examples:
+                success:
+                  value:
+                    success: true
+                    data:
+                      - id: 1
+                        symbol: 'AAPL'
+                        name: 'Apple Inc.'
+                        created_at: '2024-01-01T00:00:00.000Z'
+                        price: 150.25
+                        date: '2025-07-30'
+                      - id: 2
+                        symbol: 'GOOGL'
+                        name: 'Alphabet Inc.'
+                        created_at: '2024-01-01T00:00:00.000Z'
+                        price: 2750.80
+                        date: '2025-07-30'
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+              examples:
+                error:
+                  value:
+                    success: false
+                    error: 'Database query failed'
+
+  /stocks/{id}/prices:
+    get:
+      tags:
+        - Stocks
+      summary: Get stock price history
+      description: Retrieve historical price data for a specific stock
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Stock ID
+          schema:
+            type: integer
+        - name: days
+          in: query
+          required: false
+          description: Number of days to retrieve (default 10)
+          schema:
+            type: integer
+            default: 10
+            minimum: 1
+            maximum: 365
+      responses:
+        '200':
+          description: Price history retrieved successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/StockPrice'
+              examples:
+                success:
+                  value:
+                    success: true
+                    data:
+                      - id: 1
+                        stock_id: 1
+                        date: '2025-07-30'
+                        price: 150.25
+                        created_at: '2025-07-30T09:30:00.000Z'
+                      - id: 2
+                        stock_id: 1
+                        date: '2025-07-29'
+                        price: 149.80
+                        created_at: '2025-07-29T09:30:00.000Z'
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+              examples:
+                error:
+                  value:
+                    success: false
+                    error: 'Invalid stock ID or query parameters'
+
+tags:
+  - name: Authentication
+    description: User authentication endpoints
+  - name: Portfolio
+    description: Portfolio management and trading endpoints
+  - name: Profiles
+    description: User financial profile endpoints
+  - name: Stocks
+    description: Stock data and price management endpoints

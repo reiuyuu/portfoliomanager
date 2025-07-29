@@ -12,8 +12,8 @@ npm run install:all
 npm run dev
 
 # Or run individually:
-npm run dev:web    # Frontend only
-npm run dev:server # Backend only
+npm run web:dev    # Frontend only
+npm run server:dev  # Backend only
 ```
 
 ## Project Structure

@@ -1,46 +1,13 @@
 import { Router } from 'express'
+
 import { db } from '../config/db.js'
 
 const router = Router()
 
-/**
- * @swagger
- * /api/portfolio:
- *   get:
- *     summary: Browse a portfolio
- *     tags: [Portfolio]
- *     operationId: getPortfolio
- *     responses:
- *       200:
- *         description: List of portfolio items retrieved successfully
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 success:
- *                   type: boolean
- *                   example: true
- *                 data:
- *                   type: array
- *                   items:
- *                     $ref: '#/components/schemas/PortfolioItem'
- *                 count:
- *                   type: number
- *                   example: 5
- *       400:
- *         description: Bad request
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/responses/BadRequest'
- */
-// GET /api/portfolio
-router.get('/', async (req, res) => {
+router.get('/', async (_req, res) => {
   try {
     // 第一步：获取 portfolio_holdings 及其 stocks 信息
-    const { data: holdings, error } = await db
-      .from('portfolio_holdings')
+    const { data: holdings, error } = await db.from('portfolio_holdings')
       .select(`
         id,
         volume,
@@ -72,22 +39,21 @@ router.get('/', async (req, res) => {
           ...item.stocks,
           volume: item.volume,
           averagePrice: item.averagePrice,
-          currentPrice: latestPrice?.price ?? null
+          currentPrice: latestPrice?.price ?? null,
         }
-      })
+      }),
     )
 
     res.json({
       success: true,
       data: result,
-      count: result.length
+      count: result.length,
     })
   } catch (err) {
     console.error('Unexpected error:', err)
     res.status(500).json({ success: false, error: 'Internal server error' })
   }
 })
-
 
 router.post('/buy', async (req, res) => {
   const { stockId, volume, currentPrice } = req.body
@@ -112,7 +78,9 @@ router.post('/buy', async (req, res) => {
       .single()
 
     if (stockError || !stock) {
-      return res.status(400).json({ success: false, message: 'Stock not found' })
+      return res
+        .status(400)
+        .json({ success: false, message: 'Stock not found' })
     }
 
     // 查询 profiles
@@ -122,12 +90,16 @@ router.post('/buy', async (req, res) => {
       .single()
 
     if (profileError || !profile) {
-      return res.status(500).json({ success: false, message: 'Profile not found' })
+      return res
+        .status(500)
+        .json({ success: false, message: 'Profile not found' })
     }
 
     const totalCost = volume * currentPrice
     if (profile.balance < totalCost) {
-      return res.status(400).json({ success: false, error: 'Not enough balance' })
+      return res
+        .status(400)
+        .json({ success: false, error: 'Not enough balance' })
     }
 
     // 查询 portfolio_holdings 中是否已有该股票
@@ -147,23 +119,28 @@ router.post('/buy', async (req, res) => {
           {
             stock_id: stockId,
             volume,
-            avg_price: currentPrice
-          }
+            avg_price: currentPrice,
+          },
         ])
         .select()
         .single()
 
       if (insertError) {
-        return res.status(500).json({ success: false, message: 'Failed to insert portfolio', error: insertError.message })
+        return res.status(500).json({
+          success: false,
+          message: 'Failed to insert portfolio',
+          error: insertError.message,
+        })
       }
 
       portfolioResult = inserted
-
     } else {
       // 🔁 已有投资，更新持仓
       const newVolume = existingHolding.volume + volume
       const newAveragePrice =
-        (existingHolding.avg_price * existingHolding.volume + volume * currentPrice) / newVolume
+        (existingHolding.avg_price * existingHolding.volume +
+          volume * currentPrice) /
+        newVolume
 
       const { data: updated, error: updateError } = await db
         .from('portfolio_holdings')
@@ -176,7 +153,11 @@ router.post('/buy', async (req, res) => {
         .single()
 
       if (updateError) {
-        return res.status(500).json({ success: false, message: 'Failed to update portfolio', error: updateError.message })
+        return res.status(500).json({
+          success: false,
+          message: 'Failed to update portfolio',
+          error: updateError.message,
+        })
       }
 
       portfolioResult = updated
@@ -199,7 +180,11 @@ router.post('/buy', async (req, res) => {
       .single()
 
     if (updateProfileError) {
-      return res.status(500).json({ success: false, message: 'Failed to update profile', error: updateProfileError.message })
+      return res.status(500).json({
+        success: false,
+        message: 'Failed to update profile',
+        error: updateProfileError.message,
+      })
     }
 
     // 成功返回
@@ -212,52 +197,12 @@ router.post('/buy', async (req, res) => {
     })
   } catch (err) {
     console.error('Unexpected error:', err)
-    return res.status(500).json({ success: false, message: 'Unexpected server error' })
+    return res
+      .status(500)
+      .json({ success: false, message: 'Unexpected server error' })
   }
 })
 
-
-/**
- * @swagger
- * /api/portfolio/{itemId}:
- *   delete:
- *     summary: Remove item from portfolio
- *     tags: [Portfolio]
- *     operationId: deletePortfolioItem
- *     parameters:
- *       - in: path
- *         name: itemId
- *         required: true
- *         schema:
- *           type: integer
- *         description: The portfolio item ID to delete
- *     responses:
- *       200:
- *         description: Portfolio item deleted successfully
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 success:
- *                   type: boolean
- *                   example: true
- *                 message:
- *                   type: string
- *                   example: Portfolio item deleted successfully
- *       404:
- *         description: Portfolio item not found
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/responses/NotFound'
- *       400:
- *         description: Bad request
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/responses/BadRequest'
- */
 // DELETE /api/portfolio/:itemId
 router.delete('/:itemId', async (req, res) => {
   // TODO: Implement portfolio item deletion logic

@@ -1,48 +1,45 @@
-// Database types based on PostgreSQL schema
-
-// Auth types (from Supabase auth.users)
+// auth user from Supabase
 export interface User {
-  id: string // UUID from auth.users
+  id: string // UUID
   email?: string
-  // Add other auth fields as needed
 }
 
-// Profile table
+// profile
 export interface Profile {
-  id: string // UUID, references auth.users(id)
+  id: string // UUID
   username: string
   avatar_url: string | null
-  init_invest: number // Initial investment amount
-  balance: number // Current balance
-  holdings: number // Total value of stock holdings
-  net_profit: number // Net profit/loss
-  created_at: string // ISO timestamp
-  updated_at: string // ISO timestamp
+  init_invest: number
+  balance: number
+  holdings: number
+  net_profit: number
+  created_at: string
+  updated_at: string
 }
 
-// Stocks table
+// stocks
 export interface Stock {
-  id: number // bigint
-  symbol: string // Stock ticker symbol
-  name: string | null // Company name
-  created_at: string // ISO timestamp
+  id: number
+  symbol: string
+  name: string | null
+  created_at: string
 }
 
-// Stock prices table
+// stock_prices
 export interface StockPrice {
-  id: number // bigint
-  stock_id: number // References stocks(id)
-  date: string // Date in YYYY-MM-DD format
-  price: number // Stock price
-  created_at: string // ISO timestamp
+  id: number
+  stock_id: number
+  date: string // YYYY-MM-DD
+  price: number
+  created_at: string
 }
 
-// Portfolio holdings table
+// portfolio_holdings
 export interface PortfolioHolding {
-  id: number // bigint
-  stock_id: number // References stocks(id)
-  volume: number // Number of shares owned
-  avg_price: number // Average purchase price
-  created_at: string // ISO timestamp
-  updated_at: string // ISO timestamp
+  id: number
+  stock_id: number
+  volume: number
+  avg_price: number
+  created_at: string
+  updated_at: string
 }

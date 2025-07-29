@@ -8,7 +8,8 @@ router.post('/signup', async (req, res) => {
   const { email, password } = req.body
   const { data, error } = await db.auth.signUp({ email, password })
 
-  if (error) return res.json({ success: false, error: error.message })
+  if (error)
+    return res.status(400).json({ success: false, error: error.message })
 
   res.json({ success: true, data })
 })
@@ -25,7 +26,8 @@ router.post('/signin', async (req, res) => {
 router.post('/signout', async (_req, res) => {
   const { error } = await db.auth.signOut()
 
-  if (error) return res.json({ success: false, error: error.message })
+  if (error)
+    return res.status(400).json({ success: false, error: error.message })
 
   res.json({ success: true })
 })

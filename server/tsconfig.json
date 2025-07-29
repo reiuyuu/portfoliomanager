@@ -26,6 +26,6 @@
     "resolveJsonModule": true,
     "isolatedModules": true
   },
-  "include": ["src/**/*"],
+  "include": ["src/**/*", "test-stocks.ts"],
   "exclude": ["node_modules", "dist"]
 }

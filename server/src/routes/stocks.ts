@@ -1,7 +1,8 @@
 import { Router } from 'express'
 
-const router = Router()
+import { db } from '../config/db'
 
+const router = Router()
 /**
  * @swagger
  * /api/stocks:
@@ -27,12 +28,6 @@ const router = Router()
  *           default: 0
  *           minimum: 0
  *         description: Number of items to skip before starting to collect the result set
- *       - in: query
- *         name: search
- *         required: false
- *         schema:
- *           type: string
- *         description: Search stocks by ticker or name
  *     responses:
  *       200:
  *         description: Paginated list of stocks retrieved successfully
@@ -76,18 +71,49 @@ const router = Router()
  */
 // GET /api/stocks
 router.get('/', async (req, res) => {
-  // TODO: Implement stocks retrieval with pagination logic
-  res.json({
-    success: true,
-    data: [],
-    pagination: {
-      total: 0,
-      limit: 10,
-      offset: 0,
-      hasNext: false,
-      hasPrev: false,
-    },
-  })
+  try {
+    // TODO: Implement stocks retrieval with pagination logic
+    const limit = Math.min(
+      Math.max(parseInt(req.query.limit as string) || 10, 1),
+      100,
+    )
+    const offset = Math.max(parseInt(req.query.offset as string) || 0, 0)
+
+    let query = db
+      .from('stocks')
+      .select('id, symbol, name', { count: 'exact' })
+      .order('id', { ascending: true })
+      .range(offset, offset + limit - 1)
+
+    const { data, count, error } = await query
+
+    if (error) {
+      console.error('Error querying stocks:', error)
+      return res
+        .status(500)
+        .json({ success: false, message: 'Internal Server Error' })
+    }
+
+    const hasNext = count !== null ? offset + limit < count : false
+    const hasPrev = offset > 0
+
+    return res.status(200).json({
+      success: true,
+      data,
+      pagination: {
+        total: count || 0,
+        limit,
+        offset,
+        hasNext,
+        hasPrev,
+      },
+    })
+  } catch (err) {
+    console.error('Unexpected error:', err)
+    return res
+      .status(500)
+      .json({ success: false, message: 'Unexpected Server Error' })
+  }
 })
 
 export default router

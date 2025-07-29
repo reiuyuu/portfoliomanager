@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
 
-import type { Profile } from '@/types/database'
 import api from '@/lib/api'
 import { useAuth } from '@/hooks/useAuth'
 
@@ -8,7 +7,7 @@ import { Button } from './ui/button'
 
 export function ProfileComponent() {
   const { user } = useAuth()
-  const [profile, setProfile] = useState<Profile | null>(null)
+  const [profile, setProfile] = useState(null)
   const [loading, setLoading] = useState(true)
   const [username, setUsername] = useState('')
   const [fullName, setFullName] = useState('')
@@ -18,7 +17,7 @@ export function ProfileComponent() {
     const response = await api.get(`/profiles/${user!.id}`)
 
     if (response.data.data) {
-      const profileData = response.data.data as Profile
+      const profileData = response.data.data
       setProfile(profileData)
       setUsername(profileData.username || '')
       setFullName(profileData.full_name || '')

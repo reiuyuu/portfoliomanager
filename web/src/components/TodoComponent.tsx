@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
 
-import type { Todo } from '@/types/database'
 import api from '@/lib/api'
 import { useAuth } from '@/hooks/useAuth'
 
@@ -8,7 +7,7 @@ import { Button } from './ui/button'
 
 export function TodoComponent() {
   const { user } = useAuth()
-  const [todos, setTodos] = useState<Todo[]>([])
+  const [todos, setTodos] = useState([])
   const [loading, setLoading] = useState(true)
   const [newTask, setNewTask] = useState('')
 

@@ -1,0 +1,180 @@
+openapi: 3.0.0
+info:
+  title: Portfolio Manager API
+  description: API for managing investment portfolios
+  version: 1.0.0
+  contact:
+    name: Portfolio Manager Team
+    email: contact@portfoliomanager.com
+
+servers:
+  - url: http://localhost:3000/api
+    description: Development server
+  - url: https://portfoliomanager-api.com/api
+    description: Production server
+
+components:
+  schemas:
+    ApiResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          description: Indicates if the request was successful
+        data:
+          type: object
+          description: Response data when successful
+        error:
+          type: string
+          description: Error message when unsuccessful
+
+    User:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: User unique identifier
+        email:
+          type: string
+          format: email
+          description: User email address
+
+    Session:
+      type: object
+      properties:
+        user:
+          $ref: '#/components/schemas/User'
+        access_token:
+          type: string
+          description: JWT access token
+
+    AuthRequest:
+      type: object
+      required:
+        - email
+        - password
+      properties:
+        email:
+          type: string
+          format: email
+          example: user@example.com
+        password:
+          type: string
+          format: password
+          example: password123
+
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+paths:
+  /auth/signup:
+    post:
+      tags:
+        - Authentication
+      summary: User registration
+      description: Register a new user account
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AuthRequest'
+      responses:
+        '200':
+          description: Registration successful
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          session:
+                            $ref: '#/components/schemas/Session'
+              examples:
+                success:
+                  value:
+                    success: true
+                    data:
+                      session:
+                        user:
+                          id: '550e8400-e29b-41d4-a716-446655440000'
+                          email: 'user@example.com'
+                        access_token: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...'
+                error:
+                  value:
+                    success: false
+                    error: 'User already registered'
+
+  /auth/signin:
+    post:
+      tags:
+        - Authentication
+      summary: User login
+      description: Authenticate user and get access token
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AuthRequest'
+      responses:
+        '200':
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          session:
+                            $ref: '#/components/schemas/Session'
+              examples:
+                success:
+                  value:
+                    success: true
+                    data:
+                      session:
+                        user:
+                          id: '550e8400-e29b-41d4-a716-446655440000'
+                          email: 'user@example.com'
+                        access_token: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...'
+                error:
+                  value:
+                    success: false
+                    error: 'Invalid login credentials'
+
+  /auth/signout:
+    post:
+      tags:
+        - Authentication
+      summary: User logout
+      description: Sign out the current user session
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Logout successful
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+              examples:
+                success:
+                  value:
+                    success: true
+
+tags:
+  - name: Authentication
+    description: User authentication endpoints

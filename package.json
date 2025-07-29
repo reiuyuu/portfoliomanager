@@ -3,15 +3,15 @@
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
-    "dev": "concurrently \"npm run dev:web\" \"npm run dev:server\"",
-    "dev:web": "cd web && npm run dev",
-    "dev:server": "cd server && npm run dev",
-    "build": "npm run build:web && npm run build:server",
-    "build:web": "cd web && npm run build",
-    "build:server": "cd server && npm run build",
+    "dev": "concurrently \"npm run web:dev\" \"npm run server:dev\"",
+    "build": "concurrently \"npm run build:web\" \"npm run build:server\"",
     "install:all": "npm install && cd web && npm install && cd ../server && npm install",
+    "web:dev": "cd web && npm run dev",
+    "web:build": "cd web && npm run build",
+    "server:dev": "cd server && npm run dev",
+    "server:build": "cd server && npm run build",
     "format": "prettier --write .",
-    "clean": "rm -rf node_modules && rm -rf web/node_modules && rm -rf server/node_modules && rm -rf web/dist && rm -rf server/dist"
+    "clean": "concurrently \"cd web && npm run clean\" \"cd server && npm run clean\""
   },
   "keywords": [],
   "author": "reiuyuu <reiuyuu@gmail.com>",

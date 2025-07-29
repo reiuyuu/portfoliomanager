@@ -24,15 +24,11 @@ npm run dev
 
 ## API Endpoints
 
-<!-- todo -->
-
-- `/health` - Health check
 - `/auth/*` - Authentication routes
-- `/users/*` - User management
 - `/stocks/*` - Stock data
 - `/portfolio/*` - Portfolio management
 - `/profiles/*` - User profiles
-- `/price-history/*` - Stock price history
+- `/health` - Health check
 
 ## Environment Variables
 

@@ -22,6 +22,11 @@ app.use('/api', routes)
 // Swagger UI
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument))
 
+// Health check
+app.get('/health', (_req, res) => {
+  res.status(200).json({ message: 'Portfolio Manager API Server is running!' })
+})
+
 app.listen(PORT, () => {
   console.log(`Server running on http://localhost:${PORT}`)
   console.log(`Swagger API docs available at http://localhost:${PORT}/api-docs`)

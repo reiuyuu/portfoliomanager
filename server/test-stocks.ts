@@ -1,19 +1,3 @@
-// import { db } from './src/config/db'
-
-// async function getStocks() {
-//   const { data, error } = await db.from('stocks').select('*').limit(5)
-
-//   if (error) {
-//     console.error('Error fetching stocks:', error)
-//     return
-//   }
-
-//   console.log('Stocks data:', data)
-// }
-
-// // Run the function
-// getStocks()
-
 import axios from 'axios'
 
 import { db } from './src/config/db'
@@ -41,7 +25,48 @@ async function getCurrentPrice(symbol: string): Promise<number | null> {
   }
 }
 
-async function updateStockPrices() {
+async function updateSymbolPriviousPrice() {
+  const { data: stockData, error: stockErr } = await db
+    .from('stocks')
+    .select('id,symbol')
+
+  if (stockErr) {
+    console.error('Error fetching stocks:', stockErr)
+    return
+  }
+
+  const stocksList: StockInfo[] = stockData || []
+  console.log('Fetched stocks:', stocksList)
+
+  for (const stock of stocksList) {
+    const stockId = stock.id
+    const symbol = stock.symbol
+    console.log(symbol)
+
+    const apiUrl = `https://api.twelvedata.com/time_series?symbol=${symbol}&interval=1day&apikey=${API_KEY}&source=docs`
+    const res = await axios.get(apiUrl)
+
+    const formattedData = res.data.values.map((item: any) => ({
+      stock_id: stockId,
+      price: parseFloat(item.low),
+      date: item.datetime,
+      created_at: new Date().toISOString(),
+    }))
+
+    const { error } = await db.from('stock_prices').insert(formattedData)
+
+    if (error) {
+      console.error('Insert failed:', error)
+    } else {
+      console.log(
+        `Insert ${formattedData.length} number ${symbol}'s data successfully `,
+      )
+    }
+  }
+}
+
+// insert all stocks' current day price data into stock_price
+async function insertStockCurrentPrices() {
   const { data: stockData, error: stockErr } = await db
     .from('stocks')
     .select('id,symbol')
@@ -81,4 +106,4 @@ async function updateStockPrices() {
   console.log("📈 All stocks' current price updated!")
 }
 
-updateStockPrices()
+updateSymbolPriviousPrice()

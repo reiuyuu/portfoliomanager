@@ -1,26 +1,79 @@
+import { useEffect, useState } from 'react'
+
+import type { Profile } from '@/types/database'
+import api from '@/lib/api'
 import { PortfolioHoldings } from '@/components/PortfolioHoldings'
 import { ProfileSummary } from '@/components/ProfileSummary'
 import StockChart from '@/components/StockChart'
 
+interface PortfolioData {
+  id: number
+  symbol: string
+  name: string | null
+  volume: number
+  averagePrice: number
+  currentPrice: number | null
+}
+
 function App() {
+  const [profile, setProfile] = useState<Profile | null>(null)
+  const [portfolio, setPortfolio] = useState<PortfolioData[]>([])
+  const [loading, setLoading] = useState(true)
+
+  const fetchData = async (showLoading = false) => {
+    if (showLoading) {
+      setLoading(true)
+    }
+
+    const [profileResponse, portfolioResponse] = await Promise.all([
+      api.get('/profiles'),
+      api.get('/portfolio'),
+    ])
+
+    if (profileResponse.data.success) {
+      setProfile(profileResponse.data.data)
+    }
+
+    if (portfolioResponse.data.success) {
+      setPortfolio(portfolioResponse.data.data || [])
+    }
+
+    if (showLoading) {
+      setLoading(false)
+    }
+  }
+
+  // 用于买股票后的静默更新
+  const refreshData = () => fetchData(false)
+
+  useEffect(() => {
+    fetchData(true) // 初次加载显示loading
+  }, [])
+
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="container mx-auto px-4 py-8">
-        {/* Header */}
         <div className="mb-6 text-center">
           <h1 className="text-2xl font-bold">Stock Portfolio Manager</h1>
         </div>
 
-        <div className="mx-auto max-w-7xl space-y-6">
-          <ProfileSummary />
-          <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-            <PortfolioHoldings />
-            <div>
-              <StockChart />
+        <div className="mx-auto max-w-7xl space-y-10">
+          <ProfileSummary profile={profile} loading={loading} />
+          <div className="grid grid-cols-1 gap-6 lg:grid-cols-5">
+            <div className="lg:col-span-2">
+              <PortfolioHoldings portfolio={portfolio} loading={loading} />
+            </div>
+            <div className="lg:col-span-3">
+              <StockChart onStockPurchased={refreshData} />
             </div>
           </div>
         </div>
       </div>
+
+      <footer className="absolute bottom-8 left-0 right-0 mt-8 pb-4 text-center text-sm text-gray-500">
+        <p>Happy Friday</p>
+        {/* <p>Made with ❤️ by Happy Friday Team</p> */}
+      </footer>
     </div>
   )
 }

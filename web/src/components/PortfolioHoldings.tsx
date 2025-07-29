@@ -1,7 +1,3 @@
-import { useEffect, useState } from 'react'
-
-import api from '@/lib/api'
-
 import { Button } from './ui/button'
 
 interface PortfolioData {
@@ -13,26 +9,12 @@ interface PortfolioData {
   currentPrice: number | null
 }
 
-export function PortfolioHoldings() {
-  const [portfolio, setPortfolio] = useState<PortfolioData[]>([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
+interface PortfolioHoldingsProps {
+  portfolio: PortfolioData[]
+  loading: boolean
+}
 
-  useEffect(() => {
-    fetchPortfolio()
-  }, [])
-
-  const fetchPortfolio = async () => {
-    setLoading(true)
-    const portfolioResponse = await api.get('/portfolio')
-    if (portfolioResponse.data.success) {
-      setPortfolio(portfolioResponse.data.data || [])
-    } else {
-      setError('Failed to load portfolio data')
-    }
-    setLoading(false)
-  }
-
+export function PortfolioHoldings({ portfolio, loading }: PortfolioHoldingsProps) {
   const calculatePnL = (item: PortfolioData) => {
     if (!item.currentPrice) return 0
     return (item.currentPrice - item.averagePrice) * item.volume
@@ -40,16 +22,11 @@ export function PortfolioHoldings() {
 
   if (loading) {
     return (
-      <div className="rounded-lg border p-4">
-        <div className="text-center">Loading holdings...</div>
-      </div>
-    )
-  }
-
-  if (error) {
-    return (
-      <div className="rounded-lg border p-4">
-        <div className="text-center text-red-600">{error}</div>
+      <div>
+        <h2 className="mb-3 text-lg font-semibold">My Holdings</h2>
+        <div className="rounded-lg border bg-white p-4">
+          <div className="text-center text-sm text-gray-500">Loading...</div>
+        </div>
       </div>
     )
   }
@@ -58,10 +35,6 @@ export function PortfolioHoldings() {
     <div>
       <h2 className="mb-3 text-lg font-semibold">My Holdings</h2>
       <div className="rounded-lg border bg-white p-4">
-        <div className="mb-4">
-          <Button className="w-full sm:w-auto">+ Buy Stock</Button>
-        </div>
-
         {portfolio.length > 0 ? (
           <div className="overflow-x-auto">
             <table className="w-full text-sm">

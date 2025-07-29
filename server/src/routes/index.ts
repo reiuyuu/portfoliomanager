@@ -5,7 +5,6 @@ import healthRouter from './health.js'
 import portfolioRouter from './portfolio.js'
 import profilesRouter from './profiles.js'
 import stocksRouter from './stocks.js'
-import todosRouter from './todos.js'
 
 export const routes = Router()
 
@@ -15,4 +14,3 @@ routes.use('/health', healthRouter)
 routes.use('/portfolio', portfolioRouter)
 routes.use('/profiles', profilesRouter)
 routes.use('/stocks', stocksRouter)
-routes.use('/todos', todosRouter)

@@ -52,7 +52,7 @@ function App() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <div className="container mx-auto px-4 py-8">
+      <div className="container relative mx-auto h-full px-4 py-8">
         <div className="mb-6 text-center">
           <h1 className="text-2xl font-bold">Portfolio Manager</h1>
         </div>
@@ -68,12 +68,11 @@ function App() {
             </div>
           </div>
         </div>
+        <div className="mt-12 pb-4 text-center text-sm text-gray-500">
+          <p>Happy Friday</p>
+          {/* <p>Made with ❤️ by Happy Friday Team</p> */}
+        </div>
       </div>
-
-      <footer className="absolute bottom-8 left-0 right-0 mt-8 pb-4 text-center text-sm text-gray-500">
-        <p>Happy Friday</p>
-        {/* <p>Made with ❤️ by Happy Friday Team</p> */}
-      </footer>
     </div>
   )
 }

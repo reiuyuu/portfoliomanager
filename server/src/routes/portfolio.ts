@@ -127,13 +127,11 @@ router.post('/buy', async (req, res) => {
         .single()
 
       if (insertError) {
-        return res
-          .status(500)
-          .json({
-            success: false,
-            message: 'Failed to insert portfolio',
-            error: insertError.message,
-          })
+        return res.status(500).json({
+          success: false,
+          message: 'Failed to insert portfolio',
+          error: insertError.message,
+        })
       }
 
       portfolioResult = inserted
@@ -156,13 +154,11 @@ router.post('/buy', async (req, res) => {
         .single()
 
       if (updateError) {
-        return res
-          .status(500)
-          .json({
-            success: false,
-            message: 'Failed to update portfolio',
-            error: updateError.message,
-          })
+        return res.status(500).json({
+          success: false,
+          message: 'Failed to update portfolio',
+          error: updateError.message,
+        })
       }
 
       portfolioResult = updated
@@ -185,13 +181,11 @@ router.post('/buy', async (req, res) => {
       .single()
 
     if (updateProfileError) {
-      return res
-        .status(500)
-        .json({
-          success: false,
-          message: 'Failed to update profile',
-          error: updateProfileError.message,
-        })
+      return res.status(500).json({
+        success: false,
+        message: 'Failed to update profile',
+        error: updateProfileError.message,
+      })
     }
 
     // 成功返回

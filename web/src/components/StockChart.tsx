@@ -91,96 +91,106 @@ const StockChart: React.FC = () => {
   } satisfies ChartConfig
 
   return (
-    <div className="flex h-96">
-      <div className="w-1/3 overflow-y-scroll border-r bg-white p-4">
-        <h2 className="mb-4 text-xl font-bold">Stocks</h2>
-        <div className="space-y-2">
-          {stocks.map((stock) => (
-            <div
-              key={stock.id}
-              onClick={() => setSelectedStock(stock)}
-              className={`cursor-pointer rounded-lg border p-3 transition-colors hover:bg-gray-50 ${
-                selectedStock?.id === stock.id
-                  ? 'border-blue-500 bg-blue-50'
-                  : 'border-gray-200'
-              }`}
-            >
-              <div className="flex items-center justify-between">
-                <div>
-                  <h3 className="font-semibold text-gray-900">
-                    {stock.symbol}
+    <div>
+      <h2 className="mb-3 text-lg font-semibold">Stocks & Recent Prices</h2>
+      <div className="rounded-lg border bg-white">
+        <div className="flex h-96">
+          <div className="w-56 flex-shrink-0 overflow-y-auto border-r p-4">
+            <h3 className="mb-3 font-semibold">Stock List</h3>
+            <div className="space-y-2">
+              {stocks.map((stock) => (
+                <div
+                  key={stock.id}
+                  onClick={() => setSelectedStock(stock)}
+                  className={`cursor-pointer rounded border p-2 text-sm transition-colors hover:bg-gray-50 ${
+                    selectedStock?.id === stock.id
+                      ? 'border-blue-500 bg-blue-50'
+                      : 'border-gray-200'
+                  }`}
+                >
+                  <div className="flex items-center justify-between">
+                    <div className="min-w-0 flex-1">
+                      <div className="font-medium">{stock.symbol}</div>
+                      <div className="truncate text-xs text-gray-600">
+                        {stock.name}
+                      </div>
+                    </div>
+                    <div className="ml-2 text-right">
+                      <div className="font-medium">
+                        ${stock.price.toFixed(2)}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="min-w-0 flex-1 p-4">
+            {selectedStock ? (
+              <div>
+                <div className="mb-4">
+                  <h3 className="font-semibold">
+                    {selectedStock.symbol} - {selectedStock.name}
                   </h3>
-                  <p className="text-sm text-gray-600">{stock.name}</p>
+                  <p className="text-sm text-gray-600">Price History</p>
                 </div>
-                <div className="text-right">
-                  <p className="font-semibold text-gray-900">
-                    ${stock.price.toFixed(2)}
-                  </p>
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
 
-      <div className="flex-1 p-6">
-        {selectedStock ? (
-          <div>
-            <div className="mb-6">
-              <h1 className="text-2xl font-bold text-gray-900">
-                {selectedStock.symbol} - {selectedStock.name}
-              </h1>
-              <p className="text-gray-600">Last 10 Days Price Chart</p>
-            </div>
+                {error && (
+                  <div className="mb-4 rounded bg-red-50 p-3 text-sm text-red-700">
+                    {error}
+                  </div>
+                )}
 
-            {error && (
-              <div className="mb-4 rounded-lg bg-red-50 p-4 text-red-700">
-                {error}
+                {loading ? (
+                  <div className="flex h-64 items-center justify-center">
+                    <div className="text-gray-500">Loading...</div>
+                  </div>
+                ) : chartData.length > 0 ? (
+                  <div className="w-full overflow-hidden">
+                    <ChartContainer
+                      config={chartConfig}
+                      className="h-64 w-full"
+                    >
+                      <AreaChart data={chartData}>
+                        <CartesianGrid strokeDasharray="3 3" />
+                        <XAxis
+                          dataKey="date"
+                          tick={{ fontSize: 12 }}
+                          tickLine={false}
+                        />
+                        <YAxis
+                          tick={{ fontSize: 12 }}
+                          tickLine={false}
+                          domain={['dataMin - 5', 'dataMax + 5']}
+                        />
+                        <ChartTooltip content={<ChartTooltipContent />} />
+                        <Area
+                          type="monotone"
+                          dataKey="price"
+                          stroke="var(--color-price)"
+                          fill="var(--color-price)"
+                          fillOpacity={0.3}
+                          strokeWidth={2}
+                        />
+                      </AreaChart>
+                    </ChartContainer>
+                  </div>
+                ) : (
+                  <div className="flex h-64 items-center justify-center">
+                    <div className="text-gray-500">No data available</div>
+                  </div>
+                )}
               </div>
-            )}
-
-            {loading ? (
-              <div className="flex h-96 items-center justify-center">
-                <div className="text-gray-500">Loading chart data...</div>
-              </div>
-            ) : chartData.length > 0 ? (
-              <ChartContainer config={chartConfig} className="min-h-40 w-full">
-                <AreaChart data={chartData}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis
-                    dataKey="date"
-                    tick={{ fontSize: 12 }}
-                    tickLine={false}
-                  />
-                  <YAxis
-                    tick={{ fontSize: 12 }}
-                    tickLine={false}
-                    domain={['dataMin - 5', 'dataMax + 5']}
-                  />
-                  <ChartTooltip content={<ChartTooltipContent />} />
-                  <Area
-                    type="monotone"
-                    dataKey="price"
-                    stroke="var(--color-price)"
-                    fill="var(--color-price)"
-                    fillOpacity={0.3}
-                    strokeWidth={2}
-                  />
-                </AreaChart>
-              </ChartContainer>
             ) : (
-              <div className="flex h-96 items-center justify-center">
-                <div className="text-gray-500">No price data available</div>
+              <div className="flex h-64 items-center justify-center">
+                <div className="text-gray-500">
+                  Select a stock to view chart
+                </div>
               </div>
             )}
           </div>
-        ) : (
-          <div className="flex h-96 items-center justify-center">
-            <div className="text-gray-500">
-              Select a stock to view its chart
-            </div>
-          </div>
-        )}
+        </div>
       </div>
     </div>
   )

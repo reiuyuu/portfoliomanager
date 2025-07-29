@@ -28,7 +28,7 @@ const router = Router()
  *                     $ref: '#/components/schemas/PortfolioItem'
  *                 count:
  *                   type: number
- *                   example: 5
+ *                   example: 0
  *       400:
  *         description: Bad request
  *         content:
@@ -204,8 +204,8 @@ router.put('/:itemId', async (req, res) => {
  *             schema:
  *               $ref: '#/components/responses/BadRequest'
  */
-// DELETE /api/portfolio/:itemId
 
+// DELETE /api/portfolio/:itemId
 router.delete('/:itemId', async (req, res) => {
   const { itemId } = req.params
   const parsedId = parseInt(itemId, 10)
@@ -215,10 +215,10 @@ router.delete('/:itemId', async (req, res) => {
   }
 
   try {
-    // 查询portfolio_holdings表的id是否存在
+    // 查询 portfolio_holdings 中的记录（包括 stock_id 和 valumn）
     const { data: existingItem, error: selectError } = await supabase
       .from('portfolio_holdings')
-      .select('id')
+      .select('id, stock_id, volume')
       .eq('id', parsedId)
       .single()
 
@@ -228,7 +228,55 @@ router.delete('/:itemId', async (req, res) => {
         .json({ success: false, message: 'Portfolio item not found' })
     }
 
-    // 删除
+    // 获取当前价格
+    const { data: priceData, error: priceError } = await supabase
+      .from('stock_prices')
+      .select('price')
+      .eq('stock_id', existingItem.stock_id)
+      .order('date', { ascending: false })
+      .limit(1)
+      .single()
+
+    if (priceError || !priceData) {
+      return res
+        .status(400)
+        .json({ success: false, message: 'Price not found' })
+    }
+
+    const currentValue = existingItem.volume * priceData.price
+
+    // 查询当前 profile（只有一个用户）
+    const { data: profileData, error: profileError } = await supabase
+      .from('profiles')
+      .select('id, balance, holdings')
+      .limit(1)
+      .single()
+
+    if (profileError || !profileData) {
+      return res
+        .status(400)
+        .json({ success: false, message: 'Profile not found' })
+    }
+
+    const updatedBalance = (profileData.balance || 0) + currentValue
+    const updatedHoldings = (profileData.holdings || 0) - currentValue
+
+    // 更新 profile 的 balance 和 holdings
+    const { error: updateProfileError } = await supabase
+      .from('profiles')
+      .update({
+        balance: updatedBalance,
+        holdings: updatedHoldings,
+      })
+      .eq('id', profileData.id)
+
+    if (updateProfileError) {
+      return res
+        .status(400)
+        .json({ success: false, message: updateProfileError.message })
+    }
+
+    // 删除 portfolio_holdings 中该项
     const { error: deleteError } = await supabase
       .from('portfolio_holdings')
       .delete()
@@ -243,10 +291,10 @@ router.delete('/:itemId', async (req, res) => {
     return res
       .status(200)
       .json({ success: true, message: 'Portfolio item deleted successfully' })
-  } catch (err: any) {
+  } catch (err) {
     return res
-      .status(400)
-      .json({ success: false, message: err.message || 'Unknown' })
+      .status(500)
+      .json({ success: false, message: err.message || 'Unknown error' })
   }
 })
 

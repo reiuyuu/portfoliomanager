@@ -7,7 +7,6 @@ import priceHistoryRouter from './price-history.js'
 import profilesRouter from './profiles.js'
 import stocksRouter from './stocks.js'
 import todosRouter from './todos.js'
-import usersRouter from './users.js'
 
 export const routes = Router()
 
@@ -19,4 +18,3 @@ routes.use('/price-history', priceHistoryRouter)
 routes.use('/profiles', profilesRouter)
 routes.use('/stocks', stocksRouter)
 routes.use('/todos', todosRouter)
-routes.use('/users', usersRouter)

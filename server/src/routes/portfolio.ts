@@ -248,7 +248,7 @@ router.delete('/:itemId', async (req, res) => {
     // 查询当前 profile（只有一个用户）
     const { data: profileData, error: profileError } = await supabase
       .from('profiles')
-      .select('id, balance, holdings')
+      .select('id, balance, holdings,init_invest')
       .limit(1)
       .single()
 
@@ -258,8 +258,16 @@ router.delete('/:itemId', async (req, res) => {
         .json({ success: false, message: 'Profile not found' })
     }
 
+    const initInvest = profileData.init_invest
+    if (initInvest === null || initInvest === undefined) {
+      return res.status(400).json({
+        success: false,
+        message: 'Initial investment (init_invest) is missing or invalid',
+      })
+    }
     const updatedBalance = (profileData.balance || 0) + currentValue
     const updatedHoldings = (profileData.holdings || 0) - currentValue
+    const updatedNetProfit = updatedBalance + updatedHoldings - initInvest
 
     // 更新 profile 的 balance 和 holdings
     const { error: updateProfileError } = await supabase
@@ -267,6 +275,7 @@ router.delete('/:itemId', async (req, res) => {
       .update({
         balance: updatedBalance,
         holdings: updatedHoldings,
+        net_profit: updatedNetProfit,
       })
       .eq('id', profileData.id)
 

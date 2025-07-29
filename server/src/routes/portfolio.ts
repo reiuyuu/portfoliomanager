@@ -88,64 +88,23 @@ router.get('/', async (req, res) => {
   }
 })
 
-/**
- * @swagger
- * /api/portfolio/add:
- *   post:
- *     summary: Add item to portfolio
- *     tags: [Portfolio]
- *     operationId: addPortfolioItem
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             $ref: '#/components/schemas/PortfolioItemInput'
- *     responses:
- *       201:
- *         description: Portfolio item created successfully
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 success:
- *                   type: boolean
- *                   example: true
- *                 data:
- *                   type: object
- *                   properties:
- *                     portfolio:
- *                       $ref: '#/components/schemas/PortfolioItem'
- *                     users:
- *                       type: object
- *                       properties:
- *                         total_value:
- *                           type: number
- *                         holdings_count:
- *                           type: integer
- *                     transaction_history:
- *                       type: object
- *                       properties:
- *                         id:
- *                           type: integer
- *                         action:
- *                           type: string
- *                         amount:
- *                           type: number
- *       400:
- *         description: Bad request - validation error
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/responses/BadRequest'
- */
-// POST /api/portfolio/add
-router.post('/add', async (req, res) => {
+
+router.post('/buy', async (req, res) => {
   const { stockId, volume, currentPrice } = req.body
 
+  if (
+    typeof stockId !== 'number' ||
+    typeof volume !== 'number' ||
+    typeof currentPrice !== 'number'
+  ) {
+    return res.status(400).json({
+      success: false,
+      error: 'Request must include numeric stockId, volume, and currentPrice',
+    })
+  }
+
   try {
-    // 1. 查询 stock 信息
+    // 查询 stock 信息
     const { data: stock, error: stockError } = await db
       .from('stocks')
       .select('symbol, name')
@@ -156,51 +115,86 @@ router.post('/add', async (req, res) => {
       return res.status(400).json({ success: false, message: 'Stock not found' })
     }
 
-    // 2. 插入 portfolio_holdings
-    const { data: insertedPortfolio, error: insertError } = await db
-      .from('portfolio_holdings')
-      .insert([
-        {
-          stock_id: stockId,
-          volume,
-          avg_price: currentPrice
-        }
-      ])
-      .select()
-      .single()
-
-    if (insertError) {
-      return res.status(500).json({ success: false, message: 'Failed to insert portfolio', error: insertError.message })
-    }
-
-    // 3. 查询旧的 profile
-    const { data: oldProfile, error: profileError } = await db
+    // 查询 profiles
+    const { data: profile, error: profileError } = await db
       .from('profiles')
       .select('*')
       .single()
 
-    if (profileError || !oldProfile) {
-      return res.status(400).json({ success: false, message: 'Profile not found' })
+    if (profileError || !profile) {
+      return res.status(500).json({ success: false, message: 'Profile not found' })
     }
-    console.log(oldProfile)
 
-    // 4. 计算更新数据
-    const addedValue = volume * currentPrice
-    const newHoldings = Number(oldProfile.holdings) + addedValue
-    const newBalance = Number(oldProfile.balance) - addedValue
-    const newNetProfit = newHoldings + newBalance - Number(oldProfile.init_invest)
+    const totalCost = volume * currentPrice
+    if (profile.balance < totalCost) {
+      return res.status(400).json({ success: false, error: 'Not enough balance' })
+    }
 
-    const userId = oldProfile.id;
+    // 查询 portfolio_holdings 中是否已有该股票
+    const { data: existingHolding, error: holdingError } = await db
+      .from('portfolio_holdings')
+      .select('*')
+      .eq('stock_id', stockId)
+      .single()
 
-    // 5. 更新 profiles 表
+    let portfolioResult
+
+    if (!existingHolding) {
+      // 🆕 新增投资记录
+      const { data: inserted, error: insertError } = await db
+        .from('portfolio_holdings')
+        .insert([
+          {
+            stock_id: stockId,
+            volume,
+            avg_price: currentPrice
+          }
+        ])
+        .select()
+        .single()
+
+      if (insertError) {
+        return res.status(500).json({ success: false, message: 'Failed to insert portfolio', error: insertError.message })
+      }
+
+      portfolioResult = inserted
+
+    } else {
+      // 🔁 已有投资，更新持仓
+      const newVolume = existingHolding.volume + volume
+      const newAveragePrice =
+        (existingHolding.avg_price * existingHolding.volume + volume * currentPrice) / newVolume
+
+      const { data: updated, error: updateError } = await db
+        .from('portfolio_holdings')
+        .update({
+          volume: newVolume,
+          avg_price: newAveragePrice,
+        })
+        .eq('stock_id', stockId)
+        .select()
+        .single()
+
+      if (updateError) {
+        return res.status(500).json({ success: false, message: 'Failed to update portfolio', error: updateError.message })
+      }
+
+      portfolioResult = updated
+    }
+
+    // 更新 profile
+    const newHoldings = profile.holdings + totalCost
+    const newBalance = profile.balance - totalCost
+    const newNetProfit = newHoldings + newBalance - profile.init_invest
+
     const { data: updatedProfile, error: updateProfileError } = await db
       .from('profiles')
       .update({
         holdings: newHoldings,
         balance: newBalance,
-        net_profit: newNetProfit
+        net_profit: newNetProfit,
       })
-      .eq('id',userId)
+      .eq('id', profile.id)
       .select()
       .single()
 
@@ -208,170 +202,20 @@ router.post('/add', async (req, res) => {
       return res.status(500).json({ success: false, message: 'Failed to update profile', error: updateProfileError.message })
     }
 
-    // 6. 返回结果
+    // 成功返回
     return res.json({
       success: true,
       data: {
-        portfolio: insertedPortfolio,
-        profile: updatedProfile
-      }
+        portfolio: portfolioResult,
+        profile: updatedProfile,
+      },
     })
-
   } catch (err) {
     console.error('Unexpected error:', err)
     return res.status(500).json({ success: false, message: 'Unexpected server error' })
   }
 })
 
-
-/**
- * @swagger
- * /api/portfolio/{stockId}:
- *   put:
- *     summary: Modify item of the portfolio
- *     tags: [Portfolio]
- *     operationId: modifyPortfolioItem
- *     parameters:
- *       - in: path
- *         name: itemId
- *         required: true
- *         schema:
- *           type: integer
- *         description: The portfolio item ID
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             $ref: '#/components/schemas/PortfolioItemInput'
- *     responses:
- *       200:
- *         description: Portfolio item updated successfully
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 success:
- *                   type: boolean
- *                   example: true
- *                 data:
- *                   type: object
- *                   properties:
- *                     portfolio:
- *                       $ref: '#/components/schemas/PortfolioItem'
- *                     profile:
- *                       $ref: '#/components/schemas/UserItem'
- *       404:
- *         description: Portfolio item not found
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/responses/NotFound'
- *       400:
- *         description: Bad request
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/responses/BadRequest'
- */
-// PUT /api/portfolio/:stockId
-router.put('/:stockId', async (req, res) => {
-  const stockId = parseInt(req.params.stockId, 10)
-
-  if (isNaN(stockId)) {
-    return res.status(400).json({
-      success: false,
-      error: 'Stock ID must be an integer',
-    })
-  }
-
-  const { additionalVolume, currentPrice } = req.body
-  if (
-    typeof additionalVolume !== 'number' ||
-    typeof currentPrice !== 'number'
-  ) {
-    return res.status(400).json({
-      success: false,
-      error: 'Request body must include numeric volume, and currentPrice',
-    })
-  }
-
-  // Get current profile
-  const { data: existingProfile, error: fetchProfileError } = await db
-    .from('profiles')
-    .select('*')
-    .single()
-
-  if (existingProfile.balance < additionalVolume * currentPrice) {
-    return res.status(400).json({
-      success: false,
-      error: 'Not enough cash',
-    })
-  }
-
-  // Get current volume and current average price
-  const { data: existingItem, error: fetchItemError } = await db
-    .from('portfolio_holdings')
-    .select('*')
-    .eq('stock_id', stockId)
-    .single()
-
-  if (!existingItem || existingItem.length === 0) {
-    return res.status(404).json({
-      success: false,
-      error: `No portfolio item with id ${stockId}`,
-    })
-  }
-
-  // Update volume and average price
-  const newVolume = existingItem.volume + additionalVolume
-  const newAveragePrice =
-    (existingItem.avg_price * existingItem.volume +
-      additionalVolume * currentPrice) /
-    newVolume
-
-  const { data: updatedPortfolio, error: updatePortfolioErr } = await db
-    .from('portfolio_holdings')
-    .update({
-      volume: newVolume,
-      avg_price: newAveragePrice,
-    })
-    .eq('stock_id', stockId)
-    .select('*')
-    .single()
-
-  if (updatePortfolioErr) {
-    return res.status(400).json({
-      success: false,
-      error: updatePortfolioErr.message,
-    })
-  }
-
-  // Update profile
-  const newHoldings = existingProfile.holdings + additionalVolume * currentPrice
-  const newBalance = existingProfile.balance - additionalVolume * currentPrice
-  const newNetProfit = newHoldings + newBalance - existingProfile.init_invest
-
-  const { data: updatedProfile, error: updateProfileErr } = await db
-    .from('profiles')
-    .update({
-      holdings: newHoldings,
-      balance: newBalance,
-      net_profit: newNetProfit,
-    })
-    .eq('id', existingProfile.id)
-    .select('*')
-    .single()
-
-  res.json({
-    success: true,
-    data: {
-      portfolio: updatedPortfolio,
-      profile: updatedProfile,
-    },
-  })
-})
 
 /**
  * @swagger

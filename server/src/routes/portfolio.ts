@@ -1,4 +1,5 @@
 import { Router } from 'express'
+import { db } from '../config/db.js'
 
 const router = Router()
 
@@ -36,8 +37,55 @@ const router = Router()
  */
 // GET /api/portfolio
 router.get('/', async (req, res) => {
-  // TODO: Implement portfolio retrieval logic
-  res.json({ success: true, data: [], count: 0 })
+  try {
+    // 第一步：获取 portfolio_holdings 及其 stocks 信息
+    const { data: holdings, error } = await db
+      .from('portfolio_holdings')
+      .select(`
+        id,
+        volume,
+        averagePrice: avg_price,
+        stock_id,
+        stocks (
+          id,
+          symbol,
+          name
+        )
+      `)
+
+    if (error) {
+      return res.status(400).json({ success: false, message: error.message })
+    }
+
+    // 第二步：为每个股票查询最新一条 price（并发查）
+    const result = await Promise.all(
+      holdings.map(async (item) => {
+        const { data: latestPrice } = await db
+          .from('stock_prices')
+          .select('price')
+          .eq('stock_id', item.stock_id)
+          .order('date', { ascending: false })
+          .limit(1)
+          .single() // 只取一条记录
+
+        return {
+          ...item.stocks,
+          volume: item.volume,
+          averagePrice: item.averagePrice,
+          currentPrice: latestPrice?.price ?? null
+        }
+      })
+    )
+
+    res.json({
+      success: true,
+      data: result,
+      count: result.length
+    })
+  } catch (err) {
+    console.error('Unexpected error:', err)
+    res.status(500).json({ success: false, error: 'Internal server error' })
+  }
 })
 
 /**

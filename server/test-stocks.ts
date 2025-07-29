@@ -65,44 +65,45 @@ async function updateSymbolPriviousPrice() {
   }
 }
 
-// async function updateStockPrices() {
-//   const { data: stockData, error: stockErr } = await db
-//     .from('stocks')
-//     .select('id,symbol')
+// insert all stocks' current day price data into stock_price
+async function insertStockCurrentPrices() {
+  const { data: stockData, error: stockErr } = await db
+    .from('stocks')
+    .select('id,symbol')
 
-//   if (stockErr) {
-//     console.error('Error fetching stocks:', stockErr)
-//     return
-//   }
+  if (stockErr) {
+    console.error('Error fetching stocks:', stockErr)
+    return
+  }
 
-//   const stocksList: StockInfo[] = stockData || []
-//   console.log('Fetched stocks:', stocksList)
+  const stocksList: StockInfo[] = stockData || []
+  console.log('Fetched stocks:', stocksList)
 
-//   for (const stock of stocksList) {
-//     const price = await getCurrentPrice(stock.symbol)
-//     if (price === null) continue
+  for (const stock of stocksList) {
+    const price = await getCurrentPrice(stock.symbol)
+    if (price === null) continue
 
-//     const today = new Date().toISOString().slice(0, 10)
+    const today = new Date().toISOString().slice(0, 10)
 
-//     const { error: insertErr } = await db.from('stock_prices').insert([
-//       {
-//         stock_id: stock.id,
-//         price,
-//         date: today,
-//         created_at: new Date(),
-//       },
-//     ])
+    const { error: insertErr } = await db.from('stock_prices').insert([
+      {
+        stock_id: stock.id,
+        price,
+        date: today,
+        created_at: new Date(),
+      },
+    ])
 
-//     if (insertErr) {
-//       console.error(`Insert ${stock.symbol} price failed:`, insertErr)
-//     } else {
-//       console.log(
-//         `✅ Inserted ${stock.symbol} (stock_id=${stock.id}) price $${price}`,
-//       )
-//     }
-//   }
+    if (insertErr) {
+      console.error(`Insert ${stock.symbol} price failed:`, insertErr)
+    } else {
+      console.log(
+        `✅ Inserted ${stock.symbol} (stock_id=${stock.id}) price $${price}`,
+      )
+    }
+  }
 
-//   console.log("📈 All stocks' current price updated!")
-// }
+  console.log("📈 All stocks' current price updated!")
+}
 
 updateSymbolPriviousPrice()

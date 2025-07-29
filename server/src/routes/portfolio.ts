@@ -142,20 +142,87 @@ router.get('/', async (req, res) => {
  */
 // POST /api/portfolio/add
 router.post('/add', async (req, res) => {
-  // TODO: 实际数据库操作
-  // 1. 插入 portfolio 表
-  // 2. 更新 users 表统计
-  // 3. 插入 transaction_history 表
+  const { stockId, volume, currentPrice } = req.body
 
-  res.status(201).json({
-    success: true,
-    data: {
-      portfolio: { id: 123, symbol: 'AAPL', quantity: 10 },
-      users: { total_value: 25000, holdings_count: 8 },
-      transaction_history: { id: 456, action: 'BUY', amount: 1500 },
-    },
-  })
+  try {
+    // 1. 查询 stock 信息
+    const { data: stock, error: stockError } = await db
+      .from('stocks')
+      .select('symbol, name')
+      .eq('id', stockId)
+      .single()
+
+    if (stockError || !stock) {
+      return res.status(400).json({ success: false, message: 'Stock not found' })
+    }
+
+    // 2. 插入 portfolio_holdings
+    const { data: insertedPortfolio, error: insertError } = await db
+      .from('portfolio_holdings')
+      .insert([
+        {
+          stock_id: stockId,
+          volume,
+          avg_price: currentPrice
+        }
+      ])
+      .select()
+      .single()
+
+    if (insertError) {
+      return res.status(500).json({ success: false, message: 'Failed to insert portfolio', error: insertError.message })
+    }
+
+    // 3. 查询旧的 profile
+    const { data: oldProfile, error: profileError } = await db
+      .from('profiles')
+      .select('*')
+      .single()
+
+    if (profileError || !oldProfile) {
+      return res.status(400).json({ success: false, message: 'Profile not found' })
+    }
+    console.log(oldProfile)
+
+    // 4. 计算更新数据
+    const addedValue = volume * currentPrice
+    const newHoldings = Number(oldProfile.holdings) + addedValue
+    const newBalance = Number(oldProfile.balance) - addedValue
+    const newNetProfit = newHoldings + newBalance - Number(oldProfile.init_invest)
+
+    const userId = oldProfile.id;
+
+    // 5. 更新 profiles 表
+    const { data: updatedProfile, error: updateProfileError } = await db
+      .from('profiles')
+      .update({
+        holdings: newHoldings,
+        balance: newBalance,
+        net_profit: newNetProfit
+      })
+      .eq('id',userId)
+      .select()
+      .single()
+
+    if (updateProfileError) {
+      return res.status(500).json({ success: false, message: 'Failed to update profile', error: updateProfileError.message })
+    }
+
+    // 6. 返回结果
+    return res.json({
+      success: true,
+      data: {
+        portfolio: insertedPortfolio,
+        profile: updatedProfile
+      }
+    })
+
+  } catch (err) {
+    console.error('Unexpected error:', err)
+    return res.status(500).json({ success: false, message: 'Unexpected server error' })
+  }
 })
+
 
 /**
  * @swagger

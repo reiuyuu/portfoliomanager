@@ -18,7 +18,8 @@ router.post('/signin', async (req, res) => {
   const { email, password } = req.body
   const { data, error } = await db.auth.signInWithPassword({ email, password })
 
-  if (error) return res.json({ success: false, error: error.message })
+  if (error)
+    return res.status(400).json({ success: false, error: error.message })
 
   res.json({ success: true, data })
 })

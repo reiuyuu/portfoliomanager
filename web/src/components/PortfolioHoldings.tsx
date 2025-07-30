@@ -1,6 +1,7 @@
 import { useState } from 'react'
 
 import api from '../lib/api'
+import { AnimatedNumber } from './ui/animated-number'
 import { Input } from './ui/input'
 import { Popover, PopoverContent, PopoverTrigger } from './ui/popover'
 
@@ -114,14 +115,18 @@ export function PortfolioHoldings({
         </PopoverTrigger>
         <PopoverContent
           className="w-48 p-3"
-          align="center"
-          side="top"
+          align="start"
+          side="right"
           sideOffset={6}
         >
           <div className="space-y-3">
             <div className="text-sm">
               <span className="font-medium">
-                ${item.currentPrice?.toFixed(2) || 'N/A'}
+                {item.currentPrice ? (
+                  <AnimatedNumber value={item.currentPrice} prefix="$ " />
+                ) : (
+                  'N/A'
+                )}
               </span>
               <span className="text-muted-foreground ml-1">per share</span>
             </div>
@@ -131,7 +136,7 @@ export function PortfolioHoldings({
                 Number(sellQuantity) > 0 && (
                   <div className="text-muted-foreground">
                     <div className="text-xs">
-                      Available: {item.volume} shares
+                      Available: <AnimatedNumber value={item.volume} /> shares
                       <span
                         className={`ml-2 ${Number(sellQuantity) > item.volume ? 'text-red-600' : 'text-green-600'}`}
                       >
@@ -178,107 +183,110 @@ export function PortfolioHoldings({
 
   if (loading) {
     return (
-      <div className="flex flex-col">
-        <h2 className="mb-3 flex-shrink-0 text-lg font-bold">My Holdings</h2>
-        <div className="flex h-[512px] items-center justify-center rounded-lg bg-white p-4 text-gray-500 shadow-sm">
-          Loading...
-        </div>
+      <div className="flex h-[310px] items-center justify-center rounded-lg bg-white p-4 text-gray-500 shadow-sm">
+        Loading...
       </div>
     )
   }
 
   return (
-    <div className="flex flex-col">
-      <h2 className="mb-3 flex-shrink-0 text-lg font-bold">My Holdings</h2>
-      <div className="flex h-[512px] rounded-lg bg-white p-4 shadow-sm">
-        <div className="flex w-full flex-col">
-          {portfolio.length > 0 ? (
-            <>
-              {/* Header Row */}
-              <div className="mb-2 flex items-center border-b border-gray-200 pb-2">
-                <div className="min-w-0 flex-1">
-                  <div className="text-xs font-medium text-gray-500">Stock</div>
+    <div className="flex h-[310px] rounded-lg bg-white p-4 shadow-sm">
+      <div className="flex w-full flex-col">
+        {portfolio.length > 0 ? (
+          <>
+            {/* Header Row */}
+            <div className="mb-2 flex items-center border-b border-gray-200 pb-2">
+              <div className="min-w-0 flex-1">
+                <div className="text-xs font-medium text-gray-500">Stock</div>
+              </div>
+              <div className="ml-3 flex flex-1 items-center space-x-6">
+                <div className="w-16 text-right text-xs font-medium text-gray-500">
+                  Qty
                 </div>
-                <div className="ml-3 flex flex-1 items-center space-x-6">
-                  <div className="w-20 text-right text-xs font-medium text-gray-500">
-                    Qty
-                  </div>
-                  <div className="w-24 text-right text-xs font-medium text-gray-500">
-                    Avg
-                  </div>
-                  <div className="w-24 text-right text-xs font-medium text-gray-500">
-                    Current
-                  </div>
-                  <div className="w-28 text-right text-xs font-medium text-gray-500">
-                    P&L
-                  </div>
-                  <div className="w-20 text-center text-xs font-medium text-gray-500">
-                    Action
-                  </div>
+                <div className="w-20 text-right text-xs font-medium text-gray-500">
+                  Avg
+                </div>
+                <div className="w-20 text-right text-xs font-medium text-gray-500">
+                  Current
+                </div>
+                <div className="w-24 text-right text-xs font-medium text-gray-500">
+                  P&L
+                </div>
+                <div className="w-20 text-center text-xs font-medium text-gray-500">
+                  Action
                 </div>
               </div>
+            </div>
 
-              {/* Data Rows */}
-              <div className="space-y-2">
-                {portfolio.map((item) => {
-                  const pnl = calculatePnL(item)
-                  const isPositive = pnl >= 0
-                  return (
-                    <div
-                      key={item.id}
-                      className="flex items-center justify-between border-b border-gray-100 py-2.5 text-sm last:border-b-0"
-                    >
-                      <div className="min-w-0 flex-1">
-                        <div className="text-base font-semibold">
-                          {item.symbol}
-                        </div>
-                        <div className="truncate text-xs text-gray-500">
-                          {item.name?.split(' ')[0] || ''}
-                        </div>
-                      </div>
-                      <div className="ml-3 flex flex-1 items-center space-x-6">
-                        <div className="w-20 text-right text-xs">
-                          <div className="text-sm font-semibold">
-                            {item.volume}
-                          </div>
-                        </div>
-                        <div className="w-24 text-right text-xs">
-                          <div className="text-sm font-semibold">
-                            ${item.averagePrice.toFixed(2)}
-                          </div>
-                        </div>
-                        <div className="w-24 text-right text-xs">
-                          <div className="text-sm font-semibold">
-                            {item.currentPrice
-                              ? `$${item.currentPrice.toFixed(2)}`
-                              : 'N/A'}
-                          </div>
-                        </div>
-                        <div className="w-28 text-right text-xs">
-                          <div
-                            className={`text-sm font-semibold ${isPositive ? 'text-green-600' : 'text-red-600'}`}
-                          >
-                            {isPositive ? '+' : ''}$
-                            {Math.abs(pnl)
-                              .toFixed(2)
-                              .replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
-                          </div>
-                        </div>
-                        <div className="w-20 text-center">
-                          <SellButton item={item} />
-                        </div>
+            {/* Data Rows */}
+            <div className="scrollbar-hide space-y-1.5 overflow-y-auto [&::-webkit-scrollbar]:hidden">
+              {portfolio.map((item) => {
+                const pnl = calculatePnL(item)
+                const isPositive = pnl >= 0
+                return (
+                  <div
+                    key={item.id}
+                    className="flex items-center justify-between border-b border-gray-100 py-2 text-sm last:border-b-0"
+                  >
+                    <div className="min-w-0 flex-1">
+                      <div className="text-sm font-semibold">{item.symbol}</div>
+                      <div className="truncate text-xs text-gray-500">
+                        {item.name?.split(' ')[0] || ''}
                       </div>
                     </div>
-                  )
-                })}
-              </div>
-            </>
-          ) : (
-            <div className="flex h-full items-center justify-center text-gray-400">
-              No holdings yet. Start by buying some stocks!
+                    <div className="ml-3 flex flex-1 items-center space-x-6">
+                      <div className="w-16 text-right text-xs">
+                        <div className="text-sm font-semibold">
+                          <AnimatedNumber value={item.volume} />
+                        </div>
+                      </div>
+                      <div className="w-20 text-right text-xs">
+                        <div className="text-sm font-semibold">
+                          <AnimatedNumber
+                            value={item.averagePrice}
+                            prefix="$ "
+                          />
+                        </div>
+                      </div>
+                      <div className="w-20 text-right text-xs">
+                        <div className="text-sm font-semibold">
+                          {item.currentPrice ? (
+                            <AnimatedNumber
+                              value={item.currentPrice}
+                              prefix="$ "
+                            />
+                          ) : (
+                            'N/A'
+                          )}
+                        </div>
+                      </div>
+                      <div className="w-24 text-right text-xs">
+                        <div
+                          className={`text-sm font-semibold ${isPositive ? 'text-green-600' : 'text-red-600'}`}
+                        >
+                          <AnimatedNumber
+                            value={Math.abs(pnl)}
+                            prefix={isPositive ? '+$ ' : '-$ '}
+                            className={
+                              isPositive ? 'text-green-600' : 'text-red-600'
+                            }
+                          />
+                        </div>
+                      </div>
+                      <div className="w-20 text-center">
+                        <SellButton item={item} />
+                      </div>
+                    </div>
+                  </div>
+                )
+              })}
             </div>
-          )}
-        </div>
+          </>
+        ) : (
+          <div className="flex h-full items-center justify-center text-gray-400">
+            No holdings yet. Start by buying some stocks!
+          </div>
+        )}
       </div>
     </div>
   )

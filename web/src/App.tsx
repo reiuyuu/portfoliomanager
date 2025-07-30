@@ -51,47 +51,57 @@ function App() {
   }, [])
 
   return (
-    <div className="flex min-h-screen flex-col bg-gray-50">
-      <div className="mx-auto flex min-h-64 w-full max-w-[1400px] flex-1 flex-col px-6 py-8">
-        {/* Header with centered title */}
-        <div className="mb-8 text-center">
-          <h1 className="text-3xl font-bold tracking-tight text-gray-900">
-            Portfolio Manager
-          </h1>
+    <div className="grid min-h-screen place-items-center bg-gray-50">
+      <div className="mx-auto w-full max-w-7xl px-4 py-4">
+        {/* Header with centered title and avatar */}
+        <div className="relative">
+          <div className="text-center">
+            <h1 className="text-3xl font-bold tracking-tight text-gray-900">
+              Portfolio Manager
+            </h1>
+          </div>
+
+          {/* Avatar in top right */}
+          {/* <div className="absolute right-0 top-0 flex flex-col items-center">
+            <div className="mb-1 flex h-10 w-10 items-center justify-center rounded-full bg-gray-200">
+              <span className="text-sm font-semibold text-gray-600">HF</span>
+            </div>
+            <div className="text-center text-xs text-gray-600">
+              <div className="font-medium">Happy Friday</div>
+            </div>
+          </div> */}
         </div>
 
-        {/* Portfolio Summary and Avatar row */}
-        <div className="mb-8">
-          <h2 className="mb-3 text-lg font-bold text-gray-900">
-            Portfolio Summary
-          </h2>
-          <div className="flex items-start justify-between">
-            <div className="w-1/2">
+        {/* Main content - left right structure */}
+        <div className="my-16 grid grid-cols-1 gap-6 lg:grid-cols-2">
+          {/* Left side - Portfolio Summary and My Holdings */}
+          <div className="space-y-4">
+            {/* Portfolio Summary */}
+            <div>
+              <h2 className="mb-3 text-xl font-semibold text-gray-900">
+                Portfolio Summary
+              </h2>
               <ProfileSummary profile={profile} loading={loading} />
             </div>
 
-            {/* User Avatar */}
-            <div className="flex flex-col items-center">
-              <div className="mb-2 flex h-12 w-12 items-center justify-center rounded-lg bg-gray-200">
-                <span className="text-lg font-semibold text-gray-600">HF</span>
-              </div>
-              <div className="text-center text-xs text-gray-600">
-                <div className="font-medium">Happy Friday</div>
-              </div>
+            {/* My Holdings */}
+            <div>
+              <h2 className="mb-3 text-xl font-semibold text-gray-900">
+                My Holdings
+              </h2>
+              <PortfolioHoldings
+                portfolio={portfolio}
+                loading={loading}
+                onRefresh={refresh}
+              />
             </div>
           </div>
-        </div>
 
-        {/* Main content grid */}
-        <div className="grid min-h-64 flex-1 grid-cols-1 gap-8 lg:grid-cols-10">
-          <div className="flex min-h-0 flex-col lg:col-span-5">
-            <PortfolioHoldings
-              portfolio={portfolio}
-              loading={loading}
-              onRefresh={refresh}
-            />
-          </div>
-          <div className="flex min-h-0 flex-col lg:col-span-5">
+          {/* Right side - Market Overview */}
+          <div>
+            <h2 className="mb-3 text-xl font-semibold text-gray-900">
+              Market Overview
+            </h2>
             <StockChart
               userBalance={profile?.balance}
               onPortfolioUpdate={(data) => {
@@ -108,9 +118,9 @@ function App() {
         </div>
 
         {/* Footer */}
-        <p className="mt-12 flex-shrink-0 text-center text-sm text-gray-500">
-          Happy Friday
-        </p>
+        <div className="text-center">
+          <p className="text-sm text-gray-500">Made by HappyFriday Team</p>
+        </div>
       </div>
     </div>
   )

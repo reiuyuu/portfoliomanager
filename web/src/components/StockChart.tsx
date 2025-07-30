@@ -17,6 +17,8 @@ import {
   PopoverTrigger,
 } from '@/components/ui/popover'
 
+import { AnimatedNumber } from './ui/animated-number'
+
 // 基于原有Stock类型扩展，添加最新价格信息
 type StockWithPrice = Stock & {
   price: number
@@ -138,13 +140,15 @@ const StockChart: React.FC<StockChartProps> = ({
       )}
     >
       <div className="min-w-0 flex-1">
-        <div className="text-base font-semibold">{stock.symbol}</div>
+        <div className="text-sm font-semibold">{stock.symbol}</div>
         <div className="truncate text-xs">
           {stock.name?.split(' ')[0] || ''}
         </div>
       </div>
       <div className="ml-3 text-right">
-        <div className="text-sm font-semibold">${stock.price.toFixed(2)}</div>
+        <div className="text-sm font-semibold">
+          <AnimatedNumber value={stock.price} prefix="$ " />
+        </div>
       </div>
     </div>
   )
@@ -242,13 +246,15 @@ const StockChart: React.FC<StockChartProps> = ({
         </PopoverTrigger>
         <PopoverContent
           className="w-48 p-3"
-          align="center"
+          align="end"
           side="top"
           sideOffset={6}
         >
           <div className="space-y-3">
             <div className="text-sm">
-              <span className="font-medium">${stock?.price.toFixed(2)}</span>
+              <span className="font-medium">
+                <AnimatedNumber value={stock?.price} prefix="$ " />
+              </span>
               <span className="text-muted-foreground ml-1">per share</span>
             </div>
             <div className="text-xs">
@@ -256,7 +262,11 @@ const StockChart: React.FC<StockChartProps> = ({
                 !isNaN(Number(buyQuantity)) &&
                 Number(buyQuantity) > 0 && (
                   <div className="text-muted-foreground">
-                    Total: ${(Number(buyQuantity) * stock.price).toFixed(2)}
+                    Total:{' '}
+                    <AnimatedNumber
+                      value={Number(buyQuantity) * stock.price}
+                      prefix="$ "
+                    />
                     {userBalance !== undefined && (
                       <span
                         className={`ml-2 ${Number(buyQuantity) * stock.price > userBalance ? 'text-red-600' : 'text-green-600'}`}
@@ -309,7 +319,7 @@ const StockChart: React.FC<StockChartProps> = ({
   const ChartArea = React.memo(() => {
     if (!selectedStock) {
       return (
-        <div className="flex h-64 items-center justify-center text-gray-400">
+        <div className="flex h-full items-center justify-center text-gray-400">
           Select a stock to view chart
         </div>
       )
@@ -317,23 +327,23 @@ const StockChart: React.FC<StockChartProps> = ({
 
     return (
       <div className="flex h-full min-w-0 flex-1 flex-col pl-4">
-        <div className="mb-6 flex-shrink-0">
+        <div className="mb-4 flex-shrink-0">
           <div className="flex justify-between">
             {/* Left: Company Info and Price */}
             <div className="flex-1">
               {/* Company Info and Logo */}
-              <div className="mb-4 flex items-center gap-3">
+              <div className="mb-3 flex items-center gap-3">
                 <img
                   src="https://logo.clearbit.com/apple.com"
                   alt={selectedStock.name || ''}
-                  className="h-10 w-10 rounded object-cover"
+                  className="h-8 w-8 rounded object-cover"
                   onError={(e) => {
                     const target = e.target as HTMLImageElement
                     target.style.display = 'none'
                   }}
                 />
                 <div>
-                  <h3 className="text-xl font-bold">{selectedStock.name}</h3>
+                  <h3 className="text-base font-bold">{selectedStock.name}</h3>
                   <p className="text-sm text-gray-600">
                     {selectedStock.symbol}
                   </p>
@@ -342,9 +352,13 @@ const StockChart: React.FC<StockChartProps> = ({
 
               {/* Current Price and Change */}
               {chartData.length > 0 && (
-                <div className="mt-4 flex items-center gap-4">
-                  <span className="text-sm font-bold text-gray-900">
-                    {chartData[chartData.length - 1].price.toFixed(2)} USD
+                <div className="mt-3 flex items-center gap-4">
+                  <span className="whitespace-nowrap text-sm font-bold text-gray-900">
+                    <AnimatedNumber
+                      value={chartData[chartData.length - 1].price}
+                      prefix="$ "
+                    />{' '}
+                    USD
                   </span>
 
                   {chartData.length > 1 && (
@@ -358,14 +372,20 @@ const StockChart: React.FC<StockChartProps> = ({
 
                         return (
                           <>
-                            <span className="text-sm text-gray-900">
+                            <span className="whitespace-nowrap text-sm text-gray-900">
                               {isPositive ? '+' : ''}
-                              {priceChange.toFixed(2)}
+                              <AnimatedNumber
+                                value={Math.abs(priceChange)}
+                                prefix="$ "
+                              />
                             </span>
                             <div className="flex items-center gap-0.5">
-                              <span className="text-sm text-gray-900">
+                              <span className="whitespace-nowrap text-sm text-gray-900">
                                 {isPositive ? '+' : ''}
-                                {percentChange.toFixed(2)}%
+                                <AnimatedNumber
+                                  value={Math.abs(percentChange)}
+                                  suffix="%"
+                                />
                               </span>
                               <span
                                 className={`text-sm ${isPositive ? 'text-green-600' : 'text-red-600'}`}
@@ -422,7 +442,7 @@ const StockChart: React.FC<StockChartProps> = ({
           </div>
 
           {/* Divider */}
-          <div className="mt-6 border-t border-gray-200"></div>
+          <div className="mt-4 border-t border-gray-200"></div>
         </div>
 
         {error && (
@@ -511,29 +531,28 @@ const StockChart: React.FC<StockChartProps> = ({
   })
 
   return (
-    <div className="flex flex-col">
-      <h2 className="mb-3 flex-shrink-0 text-lg font-bold">Market Overview</h2>
-      <div className="flex h-[512px] rounded-lg bg-white p-4 shadow-sm">
-        <div className="flex w-48 flex-col justify-between border-r pr-4">
-          {stocksLoading ? (
-            <div className="flex items-center justify-between py-2 text-sm">
-              <div className="min-w-0 flex-1">
-                <div className="text-base font-semibold">Loading...</div>
-                <div className="truncate text-xs">Loading...</div>
-              </div>
-              <div className="ml-3 text-right">
-                <div className="text-sm font-semibold">Loading...</div>
-              </div>
+    <div className="flex h-[460px] rounded-lg bg-white p-4 shadow-sm">
+      <div className="w-42 flex flex-col justify-between border-r pr-4">
+        {stocksLoading ? (
+          <div className="flex items-center justify-between py-2 text-sm">
+            <div className="min-w-0 flex-1">
+              <div className="text-sm font-semibold">Loading...</div>
+              <div className="truncate text-xs">Loading...</div>
             </div>
-          ) : (
-            stocks.map((stock, idx) =>
+            <div className="ml-3 text-right">
+              <div className="text-sm font-semibold">Loading...</div>
+            </div>
+          </div>
+        ) : (
+          <div className="overflow-y-auto">
+            {stocks.map((stock, idx) =>
               idx < 8 ? <StockListItem key={stock.id} stock={stock} /> : null,
-            )
-          )}
-        </div>
-
-        <ChartArea />
+            )}
+          </div>
+        )}
       </div>
+
+      <ChartArea />
     </div>
   )
 }

@@ -103,7 +103,7 @@ router.post('/buy', async (req, res) => {
     }
 
     // 查询 portfolio_holdings 中是否已有该股票
-    const { data: existingHolding, error: holdingError } = await db
+    const { data: existingHolding } = await db
       .from('portfolio_holdings')
       .select('*')
       .eq('stock_id', stockId)
@@ -203,8 +203,8 @@ router.post('/buy', async (req, res) => {
   }
 })
 
-router.delete('/stock/:stockId', async (req, res) => {
-  const { stockId } = req.params
+router.post('/sell', async (req, res) => {
+  const { stockId } = req.body
   const parsedStockId = parseInt(stockId, 10)
 
   if (isNaN(parsedStockId)) {
@@ -299,9 +299,10 @@ router.delete('/stock/:stockId', async (req, res) => {
       .status(200)
       .json({ success: true, message: 'Portfolio item deleted successfully' })
   } catch (err) {
-    return res
-      .status(500)
-      .json({ success: false, message: err.message || 'Unknown error' })
+    return res.status(500).json({
+      success: false,
+      message: (err as Error).message || 'Unknown error',
+    })
   }
 })
 

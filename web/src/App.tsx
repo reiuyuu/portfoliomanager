@@ -43,8 +43,8 @@ function App() {
     }
   }
 
-  // 用于买股票后的静默更新
-  const refreshData = () => fetchData(false)
+  // 用于更新数据
+  const refresh = () => fetchData(false)
 
   useEffect(() => {
     fetchData(true) // 初次加载显示loading
@@ -61,10 +61,14 @@ function App() {
           <ProfileSummary profile={profile} loading={loading} />
           <div className="grid grid-cols-1 gap-6 lg:grid-cols-9">
             <div className="lg:col-span-4">
-              <PortfolioHoldings portfolio={portfolio} loading={loading} />
+              <PortfolioHoldings
+                portfolio={portfolio}
+                loading={loading}
+                onRefresh={refresh}
+              />
             </div>
             <div className="lg:col-span-5">
-              <StockChart onStockPurchased={refreshData} />
+              <StockChart onRefresh={refresh} />
             </div>
           </div>
         </div>

@@ -18,10 +18,10 @@ type StockWithPrice = Stock & {
 }
 
 interface StockChartProps {
-  onStockPurchased: () => void
+  onRefresh: () => void
 }
 
-const StockChart: React.FC<StockChartProps> = ({ onStockPurchased }) => {
+const StockChart: React.FC<StockChartProps> = ({ onRefresh }) => {
   const [stocks, setStocks] = useState<StockWithPrice[]>([])
   const [selectedStock, setSelectedStock] = useState<StockWithPrice | null>(
     null,
@@ -97,8 +97,7 @@ const StockChart: React.FC<StockChartProps> = ({ onStockPurchased }) => {
 
     if (response.data.success) {
       alert('Stock purchased successfully!')
-      // 调用回调函数刷新数据
-      onStockPurchased()
+      onRefresh()
     } else {
       alert(response.data.error || 'Failed to buy stock')
     }

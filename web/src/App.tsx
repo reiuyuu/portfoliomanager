@@ -51,31 +51,66 @@ function App() {
   }, [])
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="container relative mx-auto h-full px-4 py-8">
-        <div className="mb-6 text-center">
-          <h1 className="text-2xl font-bold">Portfolio Manager</h1>
+    <div className="flex min-h-screen flex-col bg-gray-50">
+      <div className="mx-auto flex min-h-64 w-full max-w-[1400px] flex-1 flex-col px-6 py-8">
+        {/* Header with centered title */}
+        <div className="mb-8 text-center">
+          <h1 className="text-3xl font-bold tracking-tight text-gray-900">
+            Portfolio Manager
+          </h1>
         </div>
 
-        <div className="mx-auto max-w-7xl space-y-10">
-          <ProfileSummary profile={profile} loading={loading} />
-          <div className="grid grid-cols-1 gap-6 lg:grid-cols-9">
-            <div className="lg:col-span-4">
-              <PortfolioHoldings
-                portfolio={portfolio}
-                loading={loading}
-                onRefresh={refresh}
-              />
+        {/* Portfolio Summary and Avatar row */}
+        <div className="mb-8">
+          <h2 className="mb-3 text-lg font-bold text-gray-900">
+            Portfolio Summary
+          </h2>
+          <div className="flex items-start justify-between">
+            <div className="w-1/2">
+              <ProfileSummary profile={profile} loading={loading} />
             </div>
-            <div className="lg:col-span-5">
-              <StockChart onRefresh={refresh} />
+
+            {/* User Avatar */}
+            <div className="flex flex-col items-center">
+              <div className="mb-2 flex h-12 w-12 items-center justify-center rounded-lg bg-gray-200">
+                <span className="text-lg font-semibold text-gray-600">HF</span>
+              </div>
+              <div className="text-center text-xs text-gray-600">
+                <div className="font-medium">Happy Friday</div>
+              </div>
             </div>
           </div>
         </div>
-        <div className="mt-12 pb-4 text-center text-sm text-gray-500">
-          <p>Happy Friday</p>
-          {/* <p>Made with ❤️ by Happy Friday Team</p> */}
+
+        {/* Main content grid */}
+        <div className="grid min-h-64 flex-1 grid-cols-1 gap-8 lg:grid-cols-10">
+          <div className="flex min-h-0 flex-col lg:col-span-5">
+            <PortfolioHoldings
+              portfolio={portfolio}
+              loading={loading}
+              onRefresh={refresh}
+            />
+          </div>
+          <div className="flex min-h-0 flex-col lg:col-span-5">
+            <StockChart
+              userBalance={profile?.balance}
+              onPortfolioUpdate={(data) => {
+                // 更新用户信息
+                if (data.profile) {
+                  setProfile(data.profile as Profile)
+                }
+                // 更新持仓数据 - 由于返回的数据不包含完整的股票信息，
+                // 我们需要刷新持仓数据来获取完整信息
+                refresh()
+              }}
+            />
+          </div>
         </div>
+
+        {/* Footer */}
+        <p className="mt-12 flex-shrink-0 text-center text-sm text-gray-500">
+          Happy Friday
+        </p>
       </div>
     </div>
   )

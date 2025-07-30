@@ -1,3 +1,6 @@
+import { useState } from 'react'
+
+import api from '../lib/api'
 import { Button } from './ui/button'
 
 interface PortfolioData {
@@ -12,12 +15,35 @@ interface PortfolioData {
 interface PortfolioHoldingsProps {
   portfolio: PortfolioData[]
   loading: boolean
+  onRefresh?: () => void
 }
 
-export function PortfolioHoldings({ portfolio, loading }: PortfolioHoldingsProps) {
+export function PortfolioHoldings({
+  portfolio,
+  loading,
+  onRefresh,
+}: PortfolioHoldingsProps) {
+  const [sellLoading, setSellLoading] = useState<number | null>(null)
+
   const calculatePnL = (item: PortfolioData) => {
     if (!item.currentPrice) return 0
     return (item.currentPrice - item.averagePrice) * item.volume
+  }
+
+  const handleSell = async (stockId: number, symbol: string) => {
+    if (!confirm(`Are you sure you want to sell all shares of ${symbol}?`)) {
+      return
+    }
+
+    setSellLoading(stockId)
+    const response = await api.post('/portfolio/sell', { stockId })
+    if (response.data.success) {
+      onRefresh?.()
+      alert('Stock sold successfully!')
+    } else {
+      alert(response.data.message || 'Failed to sell stock')
+    }
+    setSellLoading(null)
   }
 
   if (loading) {
@@ -70,8 +96,13 @@ export function PortfolioHoldings({ portfolio, loading }: PortfolioHoldingsProps
                         {pnl.toFixed(0)}
                       </td>
                       <td className="px-1 py-2">
-                        <Button variant="outline" size="sm">
-                          Sell
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleSell(item.id, item.symbol)}
+                          disabled={sellLoading === item.id}
+                        >
+                          {sellLoading === item.id ? 'Selling...' : 'Sell'}
                         </Button>
                       </td>
                     </tr>

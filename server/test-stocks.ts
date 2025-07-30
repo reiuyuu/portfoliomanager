@@ -25,6 +25,24 @@ async function getCurrentPrice(symbol: string): Promise<number | null> {
   }
 }
 
+async function getEodPrice(
+  symbol: string,
+  date: string,
+): Promise<number | null> {
+  try {
+    const URL = 'https://api.twelvedata.com/eod'
+    const res = await axios.get(
+      `${URL}?symbol=${symbol}&apikey=${API_KEY}&date=${date}`,
+    )
+    const price = res.data?.close
+    if (!price) return null
+    return Number(price)
+  } catch (err) {
+    console.error(`Get ${symbol} price failed:`, err)
+    return null
+  }
+}
+
 async function updateSymbolPriviousPrice() {
   const { data: stockData, error: stockErr } = await db
     .from('stocks')
@@ -48,7 +66,7 @@ async function updateSymbolPriviousPrice() {
 
     const formattedData = res.data.values.map((item: any) => ({
       stock_id: stockId,
-      price: parseFloat(item.low),
+      price: parseFloat(item.close),
       date: item.datetime,
       created_at: new Date().toISOString(),
     }))
@@ -65,8 +83,8 @@ async function updateSymbolPriviousPrice() {
   }
 }
 
-// insert all stocks' current day price data into stock_price
-async function insertStockCurrentPrices() {
+// insert all stocks' price data into stock_price
+async function insertStockPrices() {
   const { data: stockData, error: stockErr } = await db
     .from('stocks')
     .select('id,symbol')
@@ -79,17 +97,17 @@ async function insertStockCurrentPrices() {
   const stocksList: StockInfo[] = stockData || []
   console.log('Fetched stocks:', stocksList)
 
+  const date = new Date().toISOString().slice(0, 10)
+  console.log(date)
   for (const stock of stocksList) {
-    const price = await getCurrentPrice(stock.symbol)
+    const price = await getEodPrice(stock.symbol, date)
     if (price === null) continue
 
-    const today = new Date().toISOString().slice(0, 10)
-
-    const { error: insertErr } = await db.from('stock_prices').insert([
+    const { error: insertErr } = await db.from('stock_prices_test').insert([
       {
         stock_id: stock.id,
         price,
-        date: today,
+        date: date,
         created_at: new Date(),
       },
     ])
@@ -106,4 +124,5 @@ async function insertStockCurrentPrices() {
   console.log("📈 All stocks' current price updated!")
 }
 
-updateSymbolPriviousPrice()
+// updateSymbolPriviousPrice()
+insertStockPrices()

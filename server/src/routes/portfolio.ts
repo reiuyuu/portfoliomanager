@@ -204,69 +204,65 @@ router.post('/buy', async (req, res) => {
 })
 
 router.post('/sell', async (req, res) => {
-  const { stockId } = req.body
+  const { stockId, volume, currentPrice } = req.body
   const parsedStockId = parseInt(stockId, 10)
+  const parsedVolume = parseInt(volume, 10)
+  const parsedPrice = parseFloat(currentPrice)
 
-  if (isNaN(parsedStockId)) {
-    return res.status(400).json({ success: false, message: 'Invalid stockId' })
+  // 基础校验
+  if (
+    isNaN(parsedStockId) ||
+    isNaN(parsedVolume) || parsedVolume <= 0 ||
+    isNaN(parsedPrice) || parsedPrice <= 0
+  ) {
+    return res.status(400).json({
+      success: false,
+      message: 'Invalid stockId, volume, or currentPrice',
+    })
   }
 
   try {
-    // 查找该股票对应的持仓记录
+    // 查找持仓
     const { data: existingItem, error: selectError } = await db
       .from('portfolio_holdings')
-      .select('id, stock_id, volume')
+      .select('id, stock_id, volume, avg_price')
       .eq('stock_id', parsedStockId)
       .single()
 
     if (selectError || !existingItem) {
-      return res
-        .status(404)
-        .json({ success: false, message: 'Portfolio item not found' })
+      return res.status(404).json({ success: false, message: 'Portfolio item not found' })
     }
 
-    // 查找该股票当前价格
-    const { data: priceData, error: priceError } = await db
-      .from('stock_prices')
-      .select('price')
-      .eq('stock_id', parsedStockId)
-      .order('date', { ascending: false })
-      .limit(1)
-      .single()
-
-    if (priceError || !priceData) {
-      return res
-        .status(400)
-        .json({ success: false, message: 'Price not found' })
+    if (parsedVolume > existingItem.volume) {
+      return res.status(400).json({ success: false, message: 'Sell volume exceeds holding volume' })
     }
 
-    const currentValue = existingItem.volume * priceData.price
+    // 卖的价值
+    const sellValue = parsedVolume * parsedPrice
+    // // 卖的成本
+    // const sellCost = parsedVolume * existingItem.avg_price
 
-    // 查找 profile 信息
-    const { data: profileData, error: profileError } = await db
+    // 查找 profile
+    const { data: profile, error: profileError } = await db
       .from('profiles')
       .select('id, balance, holdings, init_invest')
       .limit(1)
       .single()
 
-    if (profileError || !profileData) {
-      return res
-        .status(400)
-        .json({ success: false, message: 'Profile not found' })
+    if (profileError || !profile) {
+      return res.status(400).json({ success: false, message: 'Profile not found' })
     }
 
-    const initInvest = profileData.init_invest
-    if (initInvest === null || initInvest === undefined) {
-      return res.status(400).json({
-        success: false,
-        message: 'Initial investment (init_invest) is missing or invalid',
-      })
+    const { id: profileId, balance, holdings, init_invest } = profile
+
+    if (init_invest == null) {
+      return res.status(400).json({ success: false, message: 'Initial investment is missing' })
     }
 
     // 更新 profile
-    const updatedBalance = (profileData.balance || 0) + currentValue
-    const updatedHoldings = (profileData.holdings || 0) - currentValue
-    const updatedNetProfit = updatedBalance + updatedHoldings - initInvest
+    const updatedBalance = balance + sellValue
+    const updatedHoldings = holdings - sellValue
+    const updatedNetProfit = updatedBalance + updatedHoldings - init_invest
 
     const { error: updateProfileError } = await db
       .from('profiles')
@@ -275,33 +271,45 @@ router.post('/sell', async (req, res) => {
         holdings: updatedHoldings,
         net_profit: updatedNetProfit,
       })
-      .eq('id', profileData.id)
+      .eq('id', profileId)
 
     if (updateProfileError) {
-      return res
-        .status(400)
-        .json({ success: false, message: updateProfileError.message })
+      return res.status(400).json({ success: false, message: updateProfileError.message })
     }
 
-    // 删除持仓记录
-    const { error: deleteError } = await db
-      .from('portfolio_holdings')
-      .delete()
-      .eq('stock_id', parsedStockId)
+    // 全部卖出 => 删除记录
+    if (parsedVolume === existingItem.volume) {
+      const { error: deleteError } = await db
+        .from('portfolio_holdings')
+        .delete()
+        .eq('stock_id', parsedStockId)
 
-    if (deleteError) {
-      return res
-        .status(400)
-        .json({ success: false, message: deleteError.message })
+      if (deleteError) {
+        return res.status(400).json({ success: false, message: deleteError.message })
+      }
+    } else {
+      // 部分卖出 => 更新 volume（avg_price 不变）
+      const newVolume = existingItem.volume - parsedVolume
+
+      const { error: updateHoldingError } = await db
+        .from('portfolio_holdings')
+        .update({ volume: newVolume })
+        .eq('stock_id', parsedStockId)
+
+      if (updateHoldingError) {
+        return res.status(400).json({ success: false, message: updateHoldingError.message })
+      }
     }
 
-    return res
-      .status(200)
-      .json({ success: true, message: 'Portfolio item deleted successfully' })
+    return res.status(200).json({
+      success: true,
+      message: 'Sell operation successful',
+    })
   } catch (err) {
+    console.error('Sell error:', err)
     return res.status(500).json({
       success: false,
-      message: (err as Error).message || 'Unknown error',
+      message: (err as Error).message || 'Unexpected server error',
     })
   }
 })

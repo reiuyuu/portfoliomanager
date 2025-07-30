@@ -203,10 +203,106 @@ router.post('/buy', async (req, res) => {
   }
 })
 
-// DELETE /api/portfolio/:itemId
-router.delete('/:itemId', async (req, res) => {
-  // TODO: Implement portfolio item deletion logic
-  res.json({ success: true, message: 'Portfolio item deleted successfully' })
+router.delete('/stock/:stockId', async (req, res) => {
+  const { stockId } = req.params
+  const parsedStockId = parseInt(stockId, 10)
+
+  if (isNaN(parsedStockId)) {
+    return res.status(400).json({ success: false, message: 'Invalid stockId' })
+  }
+
+  try {
+    // 查找该股票对应的持仓记录
+    const { data: existingItem, error: selectError } = await db
+      .from('portfolio_holdings')
+      .select('id, stock_id, volume')
+      .eq('stock_id', parsedStockId)
+      .single()
+
+    if (selectError || !existingItem) {
+      return res
+        .status(404)
+        .json({ success: false, message: 'Portfolio item not found' })
+    }
+
+    // 查找该股票当前价格
+    const { data: priceData, error: priceError } = await db
+      .from('stock_prices')
+      .select('price')
+      .eq('stock_id', parsedStockId)
+      .order('date', { ascending: false })
+      .limit(1)
+      .single()
+
+    if (priceError || !priceData) {
+      return res
+        .status(400)
+        .json({ success: false, message: 'Price not found' })
+    }
+
+    const currentValue = existingItem.volume * priceData.price
+
+    // 查找 profile 信息
+    const { data: profileData, error: profileError } = await db
+      .from('profiles')
+      .select('id, balance, holdings, init_invest')
+      .limit(1)
+      .single()
+
+    if (profileError || !profileData) {
+      return res
+        .status(400)
+        .json({ success: false, message: 'Profile not found' })
+    }
+
+    const initInvest = profileData.init_invest
+    if (initInvest === null || initInvest === undefined) {
+      return res.status(400).json({
+        success: false,
+        message: 'Initial investment (init_invest) is missing or invalid',
+      })
+    }
+
+    // 更新 profile
+    const updatedBalance = (profileData.balance || 0) + currentValue
+    const updatedHoldings = (profileData.holdings || 0) - currentValue
+    const updatedNetProfit = updatedBalance + updatedHoldings - initInvest
+
+    const { error: updateProfileError } = await db
+      .from('profiles')
+      .update({
+        balance: updatedBalance,
+        holdings: updatedHoldings,
+        net_profit: updatedNetProfit,
+      })
+      .eq('id', profileData.id)
+
+    if (updateProfileError) {
+      return res
+        .status(400)
+        .json({ success: false, message: updateProfileError.message })
+    }
+
+    // 删除持仓记录
+    const { error: deleteError } = await db
+      .from('portfolio_holdings')
+      .delete()
+      .eq('stock_id', parsedStockId)
+
+    if (deleteError) {
+      return res
+        .status(400)
+        .json({ success: false, message: deleteError.message })
+    }
+
+    return res
+      .status(200)
+      .json({ success: true, message: 'Portfolio item deleted successfully' })
+  } catch (err) {
+    return res
+      .status(500)
+      .json({ success: false, message: err.message || 'Unknown error' })
+  }
 })
 
 export default router

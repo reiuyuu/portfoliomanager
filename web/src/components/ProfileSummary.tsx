@@ -57,7 +57,7 @@ export function ProfileSummary({ profile, loading }: ProfileSummaryProps) {
             className="text-lg font-bold text-gray-900"
             prefix="$ "
           />
-          <div className="text-xs text-gray-400">Current holdings total</div>
+          <div className="text-xs text-gray-400">Current total holdings</div>
         </div>
 
         {/* Net P&L Card */}

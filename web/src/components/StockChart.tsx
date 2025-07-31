@@ -139,7 +139,7 @@ const StockChart: React.FC<StockChartProps> = ({
           : 'text-gray-600',
       )}
     >
-      <div className="min-w-0 flex-1">
+      <div className="min-w-10 flex-1">
         <div className="text-sm font-semibold">{stock.symbol}</div>
         <div className="truncate text-xs">
           {stock.name?.split(' ')[0] || ''}
@@ -460,7 +460,7 @@ const StockChart: React.FC<StockChartProps> = ({
             <ChartContainer config={chartConfig} className="h-full w-full">
               <AreaChart
                 data={chartData}
-                margin={{ left: 5, right: 20, top: 5, bottom: 5 }}
+                margin={{ left: 5, right: 5, top: 5, bottom: 5 }}
               >
                 <defs>
                   <linearGradient
@@ -491,7 +491,7 @@ const StockChart: React.FC<StockChartProps> = ({
                   dataKey="date"
                   tick={{ fontSize: 12 }}
                   tickLine={false}
-                  interval="preserveStartEnd"
+                  interval="preserveEnd"
                   minTickGap={30}
                   axisLine={false}
                   tickMargin={8}
@@ -535,7 +535,7 @@ const StockChart: React.FC<StockChartProps> = ({
       <div className="w-42 flex flex-col justify-between border-r pr-4">
         {stocksLoading ? (
           <div className="flex items-center justify-between py-2 text-sm">
-            <div className="min-w-0 flex-1">
+            <div className="min-w-10 flex-1">
               <div className="text-sm font-semibold">Loading...</div>
               <div className="truncate text-xs">Loading...</div>
             </div>
@@ -544,7 +544,7 @@ const StockChart: React.FC<StockChartProps> = ({
             </div>
           </div>
         ) : (
-          <div className="overflow-y-auto">
+          <div className="scrollbar-hide overflow-y-auto overflow-x-hidden">
             {stocks.map((stock, idx) =>
               idx < 8 ? <StockListItem key={stock.id} stock={stock} /> : null,
             )}

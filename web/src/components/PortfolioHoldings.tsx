@@ -183,14 +183,14 @@ export function PortfolioHoldings({
 
   if (loading) {
     return (
-      <div className="flex h-[310px] items-center justify-center rounded-lg bg-white p-4 text-gray-500 shadow-sm">
+      <div className="flex h-[309px] items-center justify-center rounded-lg bg-white p-4 text-gray-500 shadow-sm">
         Loading...
       </div>
     )
   }
 
   return (
-    <div className="flex h-[310px] rounded-lg bg-white p-4 shadow-sm">
+    <div className="flex h-[309px] rounded-lg bg-white p-4 shadow-sm">
       <div className="flex w-full flex-col">
         {portfolio.length > 0 ? (
           <>

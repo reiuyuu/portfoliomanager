@@ -18,12 +18,19 @@ router.get('/', async (_req, res) => {
   if (error)
     return res.status(400).json({ success: false, error: error.message })
 
-  const result = data?.map(({ id, symbol, name, stock_prices }: any) => ({
-    id,
-    symbol,
-    name,
-    ...stock_prices[0],
-  }))
+  const result = data?.map(({ id, symbol, name, stock_prices }: any) => {
+    // TODO: bad design here
+    const logo = `${process.env.SUPABASE_URL}/storage/v1/object/public/stock-logos/${symbol}.svg`
+    const { price, date } = stock_prices[0]
+    return {
+      id,
+      symbol,
+      name,
+      logo,
+      price,
+      date,
+    }
+  })
 
   res.json({ success: true, data: result })
 })

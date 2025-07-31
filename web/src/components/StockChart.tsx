@@ -317,9 +317,7 @@ const StockChart: React.FC<StockChartProps> = ({ onRefresh, userBalance }) => {
   const ChartArea = React.memo(() => {
     if (!selectedStock) {
       return (
-        <div className="flex h-full items-center justify-center text-gray-400">
-          Select a stock to view chart
-        </div>
+        <div className="flex h-full items-center justify-center text-gray-400"></div>
       )
     }
 

@@ -5,6 +5,7 @@ interface AnimatedNumberProps {
   className?: string
   prefix?: string
   suffix?: string
+  decimals?: number
 }
 
 export function AnimatedNumber({
@@ -12,11 +13,19 @@ export function AnimatedNumber({
   className = '',
   prefix = '',
   suffix = '',
+  decimals,
 }: AnimatedNumberProps) {
+  const formatValue = (val: number) => {
+    if (decimals !== undefined) {
+      return val.toFixed(decimals)
+    }
+    return val
+  }
+
   return (
     <span className={className}>
       {prefix}
-      <NumberFlow value={value} />
+      <NumberFlow value={Number(formatValue(value))} />
       {suffix}
     </span>
   )

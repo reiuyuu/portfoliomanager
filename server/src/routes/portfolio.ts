@@ -7,9 +7,10 @@ const router = Router()
 router.get('/', async (_req, res) => {
   try {
     // 第一步：获取 portfolio_holdings 及其 stocks 信息
-    const { data: holdings, error } = await db.from('portfolio_holdings')
-      .select(`
-        id,
+    const { data: holdings, error } = await db
+      .from('portfolio_holdings')
+      .select(
+        `id,
         volume,
         averagePrice: avg_price,
         stock_id,
@@ -17,8 +18,9 @@ router.get('/', async (_req, res) => {
           id,
           symbol,
           name
-        )
-      `)
+        )`,
+      )
+      .order('stock_id', { ascending: true })
 
     if (error) {
       return res.status(400).json({ success: false, message: error.message })
@@ -212,8 +214,10 @@ router.post('/sell', async (req, res) => {
   // 基础校验
   if (
     isNaN(parsedStockId) ||
-    isNaN(parsedVolume) || parsedVolume <= 0 ||
-    isNaN(parsedPrice) || parsedPrice <= 0
+    isNaN(parsedVolume) ||
+    parsedVolume <= 0 ||
+    isNaN(parsedPrice) ||
+    parsedPrice <= 0
   ) {
     return res.status(400).json({
       success: false,
@@ -230,11 +234,15 @@ router.post('/sell', async (req, res) => {
       .single()
 
     if (selectError || !existingItem) {
-      return res.status(404).json({ success: false, message: 'Portfolio item not found' })
+      return res
+        .status(404)
+        .json({ success: false, message: 'Portfolio item not found' })
     }
 
     if (parsedVolume > existingItem.volume) {
-      return res.status(400).json({ success: false, message: 'Sell volume exceeds holding volume' })
+      return res
+        .status(400)
+        .json({ success: false, message: 'Sell volume exceeds holding volume' })
     }
 
     // 卖的价值
@@ -250,13 +258,17 @@ router.post('/sell', async (req, res) => {
       .single()
 
     if (profileError || !profile) {
-      return res.status(400).json({ success: false, message: 'Profile not found' })
+      return res
+        .status(400)
+        .json({ success: false, message: 'Profile not found' })
     }
 
     const { id: profileId, balance, holdings, init_invest } = profile
 
     if (init_invest == null) {
-      return res.status(400).json({ success: false, message: 'Initial investment is missing' })
+      return res
+        .status(400)
+        .json({ success: false, message: 'Initial investment is missing' })
     }
 
     // 更新 profile
@@ -274,7 +286,9 @@ router.post('/sell', async (req, res) => {
       .eq('id', profileId)
 
     if (updateProfileError) {
-      return res.status(400).json({ success: false, message: updateProfileError.message })
+      return res
+        .status(400)
+        .json({ success: false, message: updateProfileError.message })
     }
 
     // 全部卖出 => 删除记录
@@ -285,7 +299,9 @@ router.post('/sell', async (req, res) => {
         .eq('stock_id', parsedStockId)
 
       if (deleteError) {
-        return res.status(400).json({ success: false, message: deleteError.message })
+        return res
+          .status(400)
+          .json({ success: false, message: deleteError.message })
       }
     } else {
       // 部分卖出 => 更新 volume（avg_price 不变）
@@ -297,7 +313,9 @@ router.post('/sell', async (req, res) => {
         .eq('stock_id', parsedStockId)
 
       if (updateHoldingError) {
-        return res.status(400).json({ success: false, message: updateHoldingError.message })
+        return res
+          .status(400)
+          .json({ success: false, message: updateHoldingError.message })
       }
     }
 

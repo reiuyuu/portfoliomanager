@@ -22,7 +22,9 @@ export interface Stock {
   id: number
   symbol: string
   name: string | null
+  logo_id: string | null
   created_at: string
+  updated_at: string
 }
 
 // stock_prices

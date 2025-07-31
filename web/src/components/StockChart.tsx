@@ -23,17 +23,15 @@ import { AnimatedNumber } from './ui/animated-number'
 type StockWithPrice = Stock & {
   price: number
   date: string
+  logo: string
 }
 
 interface StockChartProps {
-  onPortfolioUpdate?: (data: { portfolio: unknown; profile: unknown }) => void
+  onRefresh?: () => void
   userBalance?: number
 }
 
-const StockChart: React.FC<StockChartProps> = ({
-  onPortfolioUpdate,
-  userBalance,
-}) => {
+const StockChart: React.FC<StockChartProps> = ({ onRefresh, userBalance }) => {
   const [stocks, setStocks] = useState<StockWithPrice[]>([])
   const [selectedStock, setSelectedStock] = useState<StockWithPrice | null>(
     null,
@@ -42,7 +40,7 @@ const StockChart: React.FC<StockChartProps> = ({
   const [stocksLoading, setStocksLoading] = useState(false)
   const [priceLoading, setPriceLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [timeRange, setTimeRange] = useState<'7d' | '30d' | '90d'>('30d')
+  const [timeRange, setTimeRange] = useState<7 | 15 | 30>(7)
 
   // 获取所有股票列表
   useEffect(() => {
@@ -74,7 +72,7 @@ const StockChart: React.FC<StockChartProps> = ({
       setError(null)
 
       // 根据时间范围确定天数
-      const days = timeRange === '7d' ? 7 : timeRange === '30d' ? 30 : 90
+      const days = timeRange
 
       const response = await api.get(
         `/stocks/${selectedStock.id}/prices?days=${days}`,
@@ -136,10 +134,10 @@ const StockChart: React.FC<StockChartProps> = ({
         'flex cursor-pointer items-center justify-between border-b border-transparent py-2 text-sm transition-colors last:border-b-0',
         selectedStock?.id === stock.id
           ? 'border-gray-200 text-gray-800'
-          : 'text-gray-600',
+          : 'text-gray-500',
       )}
     >
-      <div className="min-w-0 flex-1">
+      <div className="min-w-10 flex-1">
         <div className="text-sm font-semibold">{stock.symbol}</div>
         <div className="truncate text-xs">
           {stock.name?.split(' ')[0] || ''}
@@ -147,7 +145,7 @@ const StockChart: React.FC<StockChartProps> = ({
       </div>
       <div className="ml-3 text-right">
         <div className="text-sm font-semibold">
-          <AnimatedNumber value={stock.price} prefix="$ " />
+          <AnimatedNumber value={stock.price} prefix="$" />
         </div>
       </div>
     </div>
@@ -202,7 +200,7 @@ const StockChart: React.FC<StockChartProps> = ({
         console.log('Profile updated:', profile)
 
         // 如果需要更新父组件的资产信息，可以调用回调
-        onPortfolioUpdate?.(response.data)
+        onRefresh?.()
 
         // 重置输入为默认值
         setBuyQuantity('1')
@@ -334,9 +332,9 @@ const StockChart: React.FC<StockChartProps> = ({
               {/* Company Info and Logo */}
               <div className="mb-3 flex items-center gap-3">
                 <img
-                  src="https://logo.clearbit.com/apple.com"
+                  src={selectedStock.logo}
                   alt={selectedStock.name || ''}
-                  className="h-8 w-8 rounded object-cover"
+                  className="h-8 w-8 flex-shrink-0 rounded object-contain"
                   onError={(e) => {
                     const target = e.target as HTMLImageElement
                     target.style.display = 'none'
@@ -408,9 +406,9 @@ const StockChart: React.FC<StockChartProps> = ({
 
               <div className="flex gap-4">
                 <button
-                  onClick={() => setTimeRange('7d')}
+                  onClick={() => setTimeRange(7)}
                   className={`text-sm font-medium transition-colors ${
-                    timeRange === '7d'
+                    timeRange === 7
                       ? 'border-b-2 border-gray-900 text-gray-900'
                       : 'text-gray-500 hover:text-gray-700'
                   }`}
@@ -418,24 +416,24 @@ const StockChart: React.FC<StockChartProps> = ({
                   7D
                 </button>
                 <button
-                  onClick={() => setTimeRange('30d')}
+                  onClick={() => setTimeRange(15)}
                   className={`text-sm font-medium transition-colors ${
-                    timeRange === '30d'
+                    timeRange === 15
+                      ? 'border-b-2 border-gray-900 text-gray-900'
+                      : 'text-gray-500 hover:text-gray-700'
+                  }`}
+                >
+                  15D
+                </button>
+                <button
+                  onClick={() => setTimeRange(30)}
+                  className={`text-sm font-medium transition-colors ${
+                    timeRange === 30
                       ? 'border-b-2 border-gray-900 text-gray-900'
                       : 'text-gray-500 hover:text-gray-700'
                   }`}
                 >
                   1M
-                </button>
-                <button
-                  onClick={() => setTimeRange('90d')}
-                  className={`text-sm font-medium transition-colors ${
-                    timeRange === '90d'
-                      ? 'border-b-2 border-gray-900 text-gray-900'
-                      : 'text-gray-500 hover:text-gray-700'
-                  }`}
-                >
-                  3M
                 </button>
               </div>
             </div>
@@ -460,7 +458,7 @@ const StockChart: React.FC<StockChartProps> = ({
             <ChartContainer config={chartConfig} className="h-full w-full">
               <AreaChart
                 data={chartData}
-                margin={{ left: 5, right: 20, top: 5, bottom: 5 }}
+                margin={{ left: 5, right: 5, top: 5, bottom: 5 }}
               >
                 <defs>
                   <linearGradient
@@ -491,7 +489,7 @@ const StockChart: React.FC<StockChartProps> = ({
                   dataKey="date"
                   tick={{ fontSize: 12 }}
                   tickLine={false}
-                  interval="preserveStartEnd"
+                  interval="preserveEnd"
                   minTickGap={30}
                   axisLine={false}
                   tickMargin={8}
@@ -535,7 +533,7 @@ const StockChart: React.FC<StockChartProps> = ({
       <div className="w-42 flex flex-col justify-between border-r pr-4">
         {stocksLoading ? (
           <div className="flex items-center justify-between py-2 text-sm">
-            <div className="min-w-0 flex-1">
+            <div className="min-w-10 flex-1">
               <div className="text-sm font-semibold">Loading...</div>
               <div className="truncate text-xs">Loading...</div>
             </div>
@@ -544,7 +542,7 @@ const StockChart: React.FC<StockChartProps> = ({
             </div>
           </div>
         ) : (
-          <div className="overflow-y-auto">
+          <div className="scrollbar-hide overflow-y-auto overflow-x-hidden">
             {stocks.map((stock, idx) =>
               idx < 8 ? <StockListItem key={stock.id} stock={stock} /> : null,
             )}
